@@ -1,6 +1,6 @@
-import type { PlayerState, BlockType, Level, Grid } from '../types';
+import type { PlayerState, Level, Grid, SimpleBlockType } from '../types';
 
-export function executeStep(player: PlayerState, block: BlockType, grid: Grid): { newPlayerState: PlayerState; grid: Grid } {
+export function executeStep(player: PlayerState, block: SimpleBlockType, grid: Grid): { newPlayerState: PlayerState; grid: Grid } {
   let { x, y, dir, hasItem } = player;
   const newGrid = JSON.parse(JSON.stringify(grid));
 

@@ -16,7 +16,14 @@ export interface Tile {
 
 export type Grid = Tile[][];
 
-export type BlockType = 'forward' | 'left' | 'right' | 'pickup';
+export type SimpleBlockType = 'forward' | 'left' | 'right' | 'pickup';
+export type LoopBlockType = 'repeat';
+export type BlockType = SimpleBlockType | LoopBlockType;
+
+export interface ProgramBlock {
+    type: BlockType;
+    times?: number; // For 'repeat' type
+}
 
 export type Language = 'javascript' | 'python' | 'cpp';
 

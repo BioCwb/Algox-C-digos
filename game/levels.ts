@@ -1,4 +1,3 @@
-
 import type { Level } from '../types';
 
 export const LEVELS: Level[] = [
@@ -809,6 +808,59 @@ export const LEVELS: Level[] = [
     },
   },
   {
+    id: 46,
+    name: "A Longa Estrada",
+    description: "Use o bloco 'repeat' para atravessar este longo caminho.",
+    grid: [
+        [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'goal' }],
+    ],
+    initialPlayerState: { x: 0, y: 0, dir: 'right', hasItem: false },
+    availableBlocks: ['forward', 'repeat'],
+    solutionLength: 2, // repeat + forward
+    codeExamples: {
+        javascript: `// Usar um loop é muito mais eficiente!\nfor (let i = 0; i < 6; i++) {\n  player.moveForward();\n}`,
+        python: `# Usar um loop é muito mais eficiente!\nfor _ in range(6):\n  player.move_forward()`,
+        cpp: `// Usar um loop é muito mais eficiente!\nfor (int i = 0; i < 6; ++i) {\n  player.moveForward();\n}`,
+    }
+  },
+  {
+    id: 47,
+    name: "Fazendo Quadrados",
+    description: "Um quadrado tem 4 lados iguais. Use 'repeat' para desenhá-lo.",
+    grid: [
+        [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'wall' }],
+        [{ type: 'path' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }],
+        [{ type: 'path' }, { type: 'path' }, { type: 'goal' }, { type: 'wall' }],
+    ],
+    initialPlayerState: { x: 0, y: 0, dir: 'right', hasItem: false },
+    availableBlocks: ['forward', 'right', 'repeat'],
+    solutionLength: 4, // repeat, forward, repeat, right
+    codeExamples: {
+        javascript: `// O padrão é avançar e virar.\n// Repita isso para formar o quadrado.\nfor (let i = 0; i < 2; i++) {\n  player.moveForward();\n}\nplayer.turnRight();\n// ...`,
+        python: `# O padrão é avançar e virar.\n# Repita isso para formar o quadrado.\nfor _ in range(2):\n  player.move_forward()\nplayer.turn_right()\n# ...`,
+        cpp: `// O padrão é avançar e virar.\n// Repita isso para formar o quadrado.\nfor (int i = 0; i < 2; ++i) {\n  player.moveForward();\n}\nplayer.turnRight();\n// ...`,
+    }
+  },
+  {
+    id: 48,
+    name: "Escadaria para o Sucesso",
+    description: "O padrão se repete. Você consegue enxergá-lo e usar 'repeat'?",
+    grid: [
+        [{ type: 'start' }, { type: 'path' }, { type: 'wall' }, { type: 'wall' }, { type: 'wall' }],
+        [{ type: 'wall' }, { type: 'path' }, { type: 'path' }, { type: 'wall' }, { type: 'wall' }],
+        [{ type: 'wall' }, { type: 'wall' }, { type: 'path' }, { type: 'path' }, { type: 'wall' }],
+        [{ type: 'wall' }, { type: 'wall' }, { type: 'wall' }, { type: 'path' }, { type: 'goal' }],
+    ],
+    initialPlayerState: { x: 0, y: 0, dir: 'right', hasItem: false },
+    availableBlocks: ['forward', 'left', 'right', 'repeat'],
+    solutionLength: 6,
+    codeExamples: {
+        javascript: `// O padrão é: avançar, virar dir., avançar, virar esq.\n// Tente usar 'repeat' para otimizar!\nplayer.moveForward();\nplayer.turnRight();\n//...`,
+        python: `# O padrão é: avançar, virar dir., avançar, virar esq.\n# Tente usar 'repeat' para otimizar!\nplayer.move_forward()\nplayer.turn_right()\n#...`,
+        cpp: `// O padrão é: avançar, virar dir., avançar, virar esq.\n// Tente usar 'repeat' para otimizar!\nplayer.moveForward();\nplayer.turnRight();\n//...`,
+    }
+  },
+  {
     id: 50,
     name: "O Grande Labirinto",
     description: "Paciência e planejamento são as chaves.",
@@ -940,7 +992,7 @@ export const LEVELS: Level[] = [
         [{type: 'path'}, {type: 'path'}, {type: 'path'}, {type: 'path'}, {type: 'path'}, {type: 'path'}, {type: 'goal'}],
     ],
     initialPlayerState: {x: 0, y: 0, dir: 'right', hasItem: false},
-    availableBlocks: ['forward', 'left', 'right', 'pickup'],
+    availableBlocks: ['forward', 'left', 'right', 'pickup', 'repeat'],
     solutionLength: 28,
     codeExamples: {
         javascript: `// O final da jornada. Use toda sua sabedoria.\nplayer.turnRight();\nplayer.turnRight(); //...`,
