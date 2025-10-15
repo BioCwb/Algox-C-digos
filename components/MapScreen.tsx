@@ -1,20 +1,26 @@
 
 import React from 'react';
 import type { Level, PlayerProgress } from '../types';
-import { LockIcon, StarIcon } from './Icon';
+import { LockIcon, StarIcon, UserIcon } from './Icon';
 import { playClickSound } from '../services/audioService';
 
 interface MapScreenProps {
   levels: Level[];
   progress: PlayerProgress;
   onSelectLevel: (levelId: number) => void;
+  onOpenProfile: () => void;
 }
 
-const MapScreen: React.FC<MapScreenProps> = ({ levels, progress, onSelectLevel }) => {
+const MapScreen: React.FC<MapScreenProps> = ({ levels, progress, onSelectLevel, onOpenProfile }) => {
 
   const handleLevelClick = (levelId: number) => {
     playClickSound();
     onSelectLevel(levelId);
+  };
+
+  const handleProfileClick = () => {
+    playClickSound();
+    onOpenProfile();
   };
 
   return (
@@ -59,6 +65,10 @@ const MapScreen: React.FC<MapScreenProps> = ({ levels, progress, onSelectLevel }
         <footer className="w-full max-w-lg mt-12 p-4">
             <div className="flex justify-around bg-white/70 rounded-full shadow-inner px-4 py-2">
                  <button disabled className="px-6 py-2 font-bold text-gray-400 cursor-not-allowed">Sandbox</button>
+                 <button onClick={handleProfileClick} className="px-6 py-2 font-bold text-sky-700 hover:bg-sky-100 rounded-full flex items-center gap-2">
+                    <UserIcon className="w-5 h-5" />
+                    Perfil
+                 </button>
                  <button disabled className="px-6 py-2 font-bold text-gray-400 cursor-not-allowed">Loja</button>
             </div>
         </footer>
