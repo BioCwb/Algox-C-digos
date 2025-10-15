@@ -48,54 +48,67 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
     resetState();
   }, [level, resetState]);
 
+  /**
+   * Runs the user's program, interpreting each block and updating the player's state.
+   */
   const handleRun = async () => {
     setIsRunning(true);
     let tempPlayerState = { ...level.initialPlayerState };
     let tempGrid = JSON.parse(JSON.stringify(level.grid));
 
+    // Iterate through the program blocks one by one.
     for (let i = 0; i < program.length; i++) {
       const block = program[i];
       setActiveStep(i);
 
+      // --- Handle 'repeat' loops ---
       if (block.type === 'repeat') {
         const repeatCount = block.times || 0;
         const nextBlockToRepeat = program[i + 1];
+        // Ensure there is a next block and it's a simple action (not another loop).
         if (nextBlockToRepeat && nextBlockToRepeat.type !== 'repeat' && nextBlockToRepeat.type !== 'while') {
           for (let j = 0; j < repeatCount; j++) {
             playBlockExecuteSound();
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise(resolve => setTimeout(resolve, 300)); // Animation delay
             const { newPlayerState, grid } = executeStep(tempPlayerState, nextBlockToRepeat.type as SimpleBlockType, tempGrid);
             tempPlayerState = newPlayerState;
             tempGrid = grid;
+            // Update UI
             setPlayerState(tempPlayerState);
             setCurrentGrid(tempGrid);
           }
-          i++; 
+          i++; // Manually increment 'i' to skip the action block that was just repeated.
         }
+      // --- Handle 'while' loops ---
       } else if (block.type === 'while') {
         const condition = block.condition;
         const nextBlockToRepeat = program[i + 1];
+        // Ensure there's a condition and a simple action block to repeat.
         if (condition && nextBlockToRepeat && nextBlockToRepeat.type !== 'repeat' && nextBlockToRepeat.type !== 'while') {
-            let safetyCounter = 0;
+            let safetyCounter = 0; // Prevents infinite loops.
+            // Keep executing the next block as long as the condition is true.
             while(checkCondition(condition, tempPlayerState, tempGrid) && safetyCounter < 100) {
                 playBlockExecuteSound();
-                await new Promise(resolve => setTimeout(resolve, 300));
+                await new Promise(resolve => setTimeout(resolve, 300)); // Animation delay
                 const { newPlayerState, grid } = executeStep(tempPlayerState, nextBlockToRepeat.type as SimpleBlockType, tempGrid);
                 tempPlayerState = newPlayerState;
                 tempGrid = grid;
+                // Update UI
                 setPlayerState(tempPlayerState);
                 setCurrentGrid(tempGrid);
                 safetyCounter++;
             }
             if (safetyCounter >= 100) console.warn("Loop de 'enquanto' interrompido por segurança.");
-            i++;
+            i++; // Skip the action block that was part of the loop.
         }
+      // --- Handle simple action blocks ---
       } else {
         playBlockExecuteSound();
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 300)); // Animation delay
         const { newPlayerState, grid } = executeStep(tempPlayerState, block.type as SimpleBlockType, tempGrid);
         tempPlayerState = newPlayerState;
         tempGrid = grid;
+        // Update UI
         setPlayerState(tempPlayerState);
         setCurrentGrid(tempGrid);
       }
@@ -103,6 +116,7 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
 
     const success = checkSuccess(tempPlayerState, level);
     
+    // Calculate stars based on program length compared to the optimal solution.
     let stars = 0;
     if (success) {
       if (program.length <= level.solutionLength) {
@@ -114,6 +128,7 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
       }
     }
 
+    // Show the result screen after a short delay.
     setTimeout(() => {
       onLevelComplete({ levelId: level.id, success, stars });
       setIsRunning(false);
@@ -121,8 +136,12 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
     }, 500);
   };
 
+  /**
+   * Adds a new block to the program list. Prompts for details if it's a loop block.
+   */
   const handleAddBlock = (blockType: BlockType) => {
     playClickSound();
+    // For 'repeat' blocks, prompt the user for the number of repetitions.
     if (blockType === 'repeat') {
         const timesStr = prompt("Quantas vezes repetir o próximo bloco?", "3");
         if (timesStr) {
@@ -133,6 +152,7 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
                 alert("Por favor, insira um número válido.");
             }
         }
+    // For 'while' blocks, prompt the user to select a condition.
     } else if (blockType === 'while') {
         const conditionInput = prompt("Digite a condição para repetir o próximo bloco:\n1 - caminhoLivre\n2 - naoChegouNoObjetivo", "1");
         let condition: ConditionType | null = null;
@@ -147,6 +167,7 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
         } else {
             alert("Condição inválida. Por favor, escolha uma das opções.");
         }
+    // For simple blocks, just add them to the program.
     } else {
         setProgram([...program, { type: blockType }]);
     }

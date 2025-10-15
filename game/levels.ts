@@ -826,19 +826,19 @@ export const LEVELS: Level[] = [
   {
     id: 47,
     name: "Fazendo Quadrados",
-    description: "Um quadrado tem 4 lados iguais. Use 'repeat' para desenhá-lo.",
+    description: "Um caminho quadrado requer um padrão repetitivo de movimentos e curvas.",
     grid: [
-        [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'wall' }],
-        [{ type: 'path' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }],
-        [{ type: 'path' }, { type: 'path' }, { type: 'goal' }, { type: 'wall' }],
+        [{ type: 'start' }, { type: 'path' }, { type: 'path' }],
+        [{ type: 'wall' }, { type: 'wall' }, { type: 'path' }],
+        [{ type: 'goal' }, { type: 'path' }, { type: 'path' }],
     ],
     initialPlayerState: { x: 0, y: 0, dir: 'right', hasItem: false },
     availableBlocks: ['forward', 'right', 'repeat'],
-    solutionLength: 4, // repeat, forward, repeat, right
+    solutionLength: 7, // repeat 2, fwd, right, repeat 2, fwd, right, repeat 2, fwd
     codeExamples: {
-        javascript: `// O padrão é avançar e virar.\n// Repita isso para formar o quadrado.\nfor (let i = 0; i < 2; i++) {\n  player.moveForward();\n}\nplayer.turnRight();\n// ...`,
-        python: `# O padrão é avançar e virar.\n# Repita isso para formar o quadrado.\nfor _ in range(2):\n  player.move_forward()\nplayer.turn_right()\n# ...`,
-        cpp: `// O padrão é avançar e virar.\n// Repita isso para formar o quadrado.\nfor (int i = 0; i < 2; ++i) {\n  player.moveForward();\n}\nplayer.turnRight();\n// ...`,
+        javascript: `// O padrão é avançar 2 vezes e virar.\n// Repita isso para formar o quadrado.\nfor (let i = 0; i < 2; i++) {\n  player.moveForward();\n}\nplayer.turnRight();\n// ...`,
+        python: `# O padrão é avançar 2 vezes e virar.\n# Repita isso para formar o quadrado.\nfor _ in range(2):\n  player.move_forward()\nplayer.turn_right()\n# ...`,
+        cpp: `// O padrão é avançar 2 vezes e virar.\n// Repita isso para formar o quadrado.\nfor (int i = 0; i < 2; ++i) {\n  player.moveForward();\n}\nplayer.turnRight();\n// ...`,
     }
   },
   {
@@ -878,22 +878,20 @@ export const LEVELS: Level[] = [
   },
   {
     id: 50,
-    name: "O Grande Labirinto",
-    description: "Paciência e planejamento são as chaves.",
+    name: "Labirinto Sinuoso",
+    description: "O caminho é longo e cheio de curvas. Use 'enquanto' para avançar nas retas e vire quando necessário.",
     grid: [
-        [{type: 'start'}, {type: 'path'}, {type: 'wall'}, {type: 'path'}, {type: 'path'}, {type: 'path'}],
-        [{type: 'wall'}, {type: 'path'}, {type: 'path'}, {type: 'path'}, {type: 'wall'}, {type: 'path'}],
-        [{type: 'path'}, {type: 'path'}, {type: 'wall'}, {type: 'wall'}, {type: 'path'}, {type: 'path'}],
-        [{type: 'path'}, {type: 'wall'}, {type: 'path', item: true}, {type: 'path'}, {type: 'path'}, {type: 'wall'}],
-        [{type: 'path'}, {type: 'path'}, {type: 'path'}, {type: 'wall'}, {type: 'goal'}, {type: 'wall'}],
+        [{type: 'start'}, {type: 'path'}, {type: 'path'}],
+        [{type: 'wall'}, {type: 'wall'}, {type: 'path'}],
+        [{type: 'goal'}, {type: 'path'}, {type: 'path'}],
     ],
     initialPlayerState: {x: 0, y: 0, dir: 'right', hasItem: false},
-    availableBlocks: ['forward', 'left', 'right', 'pickup'],
-    solutionLength: 18,
+    availableBlocks: ['forward', 'left', 'right', 'while'],
+    solutionLength: 8,
     codeExamples: {
-        javascript: `// Mantenha o controle de suas curvas!\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward(); // ...`,
-        python: `# Mantenha o controle de suas curvas!\nplayer.move_forward()\nplayer.turn_right()\nplayer.move_forward() # ...`,
-        cpp: `// Mantenha o controle de suas curvas!\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward(); // ...`,
+        javascript: `// Use 'while' nas retas para simplificar!\nwhile(player.hasPathAhead()) {\n  player.moveForward();\n}\nplayer.turnRight();\n// ... continue o padrão`,
+        python: `# Use 'while' nas retas para simplificar!\nwhile player.has_path_ahead():\n  player.move_forward()\nplayer.turn_right()\n# ... continue o padrão`,
+        cpp: `// Use 'while' nas retas para simplificar!\nwhile(player.hasPathAhead()) {\n  player.moveForward();\n}\nplayer.turnRight();\n// ... continue o padrão`,
     }
   },
   {
