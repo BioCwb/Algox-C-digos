@@ -1,8 +1,11 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import type { User } from 'firebase/auth';
+import { updateProfile } from 'firebase/auth';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import type { PlayerProgress, Level, LevelProgress } from '../types';
-import { UserIcon, StarIcon, CloseIcon, AwardIcon, LogOutIcon } from './Icon';
+import { UserIcon, StarIcon, CloseIcon, AwardIcon, LogOutIcon, PencilIcon } from './Icon';
+import { auth, storage } from '../services/firebase';
 
 interface ProfileScreenProps {
   user: User;
@@ -10,6 +13,7 @@ interface ProfileScreenProps {
   levels: Level[];
   onClose: () => void;
   onSignOut: () => void;
+  onUserUpdate: (user: User) => void;
 }
 
 interface Achievement {
@@ -19,10 +23,11 @@ interface Achievement {
     isUnlocked: boolean;
 }
 
-const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, progress, levels, onClose, onSignOut }) => {
+const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, progress, levels, onClose, onSignOut, onUserUpdate }) => {
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const stats = useMemo(() => {
-        // FIX: Explicitly type the 'sum' parameter in the reduce function to prevent it from being inferred as 'unknown'.
         const totalStars = Object.values(progress).reduce((sum: number, level: LevelProgress) => sum + (level.stars || 0), 0);
         const levelsCompleted = Object.values(progress).filter((level: LevelProgress) => level.stars > 0).length;
         return { totalStars, levelsCompleted };
@@ -40,6 +45,30 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, progress, levels, o
         ];
     }, [progress, levels]);
 
+    const handleAvatarClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !auth.currentUser) return;
+
+        setIsUploading(true);
+        try {
+            const storageRef = ref(storage, `profile-pictures/${auth.currentUser.uid}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            const photoURL = await getDownloadURL(snapshot.ref);
+
+            await updateProfile(auth.currentUser, { photoURL });
+            onUserUpdate({ ...auth.currentUser, photoURL }); // Update parent state
+        } catch (error) {
+            console.error("Error uploading profile picture:", error);
+            // Optionally show an error message to the user
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in" onClick={onClose}>
@@ -53,8 +82,23 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, progress, levels, o
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-sky-50 rounded-lg mb-6">
             <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-sky-200 rounded-full flex items-center justify-center flex-shrink-0">
-                    <UserIcon className="w-10 h-10 text-sky-600" />
+                <div className="relative w-16 h-16 flex-shrink-0">
+                    <button onClick={handleAvatarClick} disabled={isUploading} className="w-full h-full rounded-full bg-sky-200 flex items-center justify-center group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">
+                        {user.photoURL ? (
+                            <img src={user.photoURL} alt="Foto do perfil" className="w-full h-full rounded-full object-cover"/>
+                        ) : (
+                            <UserIcon className="w-10 h-10 text-sky-600" />
+                        )}
+                         <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                            <PencilIcon className="w-6 h-6" />
+                        </div>
+                        {isUploading && (
+                            <div className="absolute inset-0 bg-black/70 rounded-full flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                            </div>
+                        )}
+                    </button>
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
                 </div>
                 <div>
                     <h3 className="text-xl font-bold text-sky-900 truncate" title={user.email || 'Usuário'}>

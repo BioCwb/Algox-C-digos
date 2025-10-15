@@ -84,6 +84,10 @@ const App: React.FC = () => {
         await signOut(auth);
         setIsProfileOpen(false);
     };
+    
+    const handleUserUpdate = (updatedUser: User) => {
+        setUser(updatedUser);
+    };
 
     const handleReplay = () => {
         setResult(null);
@@ -150,6 +154,7 @@ const App: React.FC = () => {
                     levels={LEVELS}
                     onClose={() => setIsProfileOpen(false)}
                     onSignOut={handleSignOut}
+                    onUserUpdate={handleUserUpdate}
                 />
             )}
         </div>
