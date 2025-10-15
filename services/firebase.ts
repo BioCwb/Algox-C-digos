@@ -3,14 +3,13 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
-// A ser substituído pelas suas credenciais reais do Firebase
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAlUBTE6VDDDCwQz3RoCB3qcPy0WdbBajU",
+  authDomain: "tutorial-85b21.firebaseapp.com",
+  projectId: "tutorial-85b21",
+  storageBucket: "tutorial-85b21.appspot.com",
+  messagingSenderId: "968839138284",
+  appId: "1:968839138284:web:c9f44fb56561cccbab8ec9"
 };
 
 // Initialize Firebase
