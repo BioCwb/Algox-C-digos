@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import type { User } from 'firebase/auth';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -11,7 +9,7 @@ import ResultScreen from './components/ResultScreen';
 import ProfileScreen from './components/ProfileScreen';
 import LoginScreen from './components/LoginScreen';
 import { auth } from './services/firebase';
-import { getUserProgress, saveUserProgress, getUserProfile } from './services/firestoreService';
+import { getUserProgress, saveUserProgress, getUserProfile, createUserProfile } from './services/firestoreService';
 
 const App: React.FC = () => {
     const [screen, setScreen] = useState<'map' | 'editor'>('map');
@@ -20,39 +18,53 @@ const App: React.FC = () => {
     
     const [user, setUser] = useState<User | null>(null);
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-    const [authLoading, setAuthLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
 
     const [progress, setProgress] = useState<PlayerProgress>({ 1: { unlocked: true, stars: 0 } });
     const [currentLevelId, setCurrentLevelId] = useState<number | null>(null);
 
     // Listen for auth state changes
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                setUser(user);
-                // Fetch both progress and profile
-                const [userProgress, profile] = await Promise.all([
-                    getUserProgress(user.uid),
-                    getUserProfile(user.uid)
-                ]);
-                setProgress(userProgress);
-                setUserProfile(profile);
-            } else {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            if (!currentUser) {
                 setUser(null);
                 setUserProfile(null);
                 setProgress({ 1: { unlocked: true, stars: 0 } });
+                setIsLoading(false);
+                return;
             }
-            setAuthLoading(false);
+    
+            setUser(currentUser);
+            let profile = await getUserProfile(currentUser.uid);
+            
+            // If profile doesn't exist, it might be a new user or an old user whose profile creation failed.
+            // Let's create one for them to make the app more resilient.
+            if (!profile) {
+                console.log("No profile found for user, creating a default one.");
+                try {
+                    // Use the email from the auth object and default to javascript.
+                    profile = await createUserProfile(currentUser.uid, currentUser.email, 'javascript');
+                } catch (error) {
+                    console.error("Critical error: Failed to create user profile. Signing out.", error);
+                    await signOut(auth);
+                    return;
+                }
+            }
+    
+            const userProgress = await getUserProgress(currentUser.uid);
+            setUserProfile(profile);
+            setProgress(userProgress);
+            setIsLoading(false);
         });
         return () => unsubscribe();
     }, []);
 
     // Save progress to Firestore whenever it changes for a logged-in user
     useEffect(() => {
-        if (user && !authLoading && userProfile) { // Ensure userProfile is loaded
+        if (user && userProfile) { 
             saveUserProgress(user.uid, progress);
         }
-    }, [progress, user, authLoading, userProfile]);
+    }, [progress, user, userProfile]);
 
     const handleSelectLevel = (levelId: number) => {
         setCurrentLevelId(levelId);
@@ -119,7 +131,7 @@ const App: React.FC = () => {
     
     const currentLevel = LEVELS.find(l => l.id === currentLevelId);
 
-    if (authLoading) {
+    if (isLoading) {
         return (
             <div className="h-screen w-screen bg-sky-50 flex items-center justify-center">
                 <div className="text-sky-600 font-bold">Carregando...</div>

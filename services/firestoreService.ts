@@ -50,9 +50,9 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
     }
 };
 
-export const createUserProfile = async (userId: string, email: string, preferredLanguage: Language): Promise<UserProfile> => {
+export const createUserProfile = async (userId: string, email: string | null, preferredLanguage: Language): Promise<UserProfile> => {
     const profileDocRef = doc(db, 'users', userId);
-    const newProfile: UserProfile = { email, preferredLanguage };
+    const newProfile: UserProfile = { email: email || 'usuário@algox.com', preferredLanguage };
     try {
         await setDoc(profileDocRef, newProfile);
         return newProfile;
