@@ -82,12 +82,14 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
       // --- Handle 'while' loops ---
       } else if (block.type === 'while') {
         const condition = block.condition;
+        // Use the user-defined iteration limit, with a fallback for safety.
+        const maxIterations = block.maxIterations || 100;
         const nextBlockToRepeat = program[i + 1];
         // Ensure there's a condition and a simple action block to repeat.
         if (condition && nextBlockToRepeat && nextBlockToRepeat.type !== 'repeat' && nextBlockToRepeat.type !== 'while') {
-            let safetyCounter = 0; // Prevents infinite loops.
-            // Keep executing the next block as long as the condition is true.
-            while(checkCondition(condition, tempPlayerState, tempGrid) && safetyCounter < 100) {
+            let iterationCount = 0; // Prevents infinite loops.
+            // Keep executing the next block as long as the condition is true and we're within the iteration limit.
+            while(checkCondition(condition, tempPlayerState, tempGrid) && iterationCount < maxIterations) {
                 playBlockExecuteSound();
                 await new Promise(resolve => setTimeout(resolve, 300)); // Animation delay
                 const { newPlayerState, grid } = executeStep(tempPlayerState, nextBlockToRepeat.type as SimpleBlockType, tempGrid);
@@ -96,9 +98,9 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
                 // Update UI
                 setPlayerState(tempPlayerState);
                 setCurrentGrid(tempGrid);
-                safetyCounter++;
+                iterationCount++;
             }
-            if (safetyCounter >= 100) console.warn("Loop de 'enquanto' interrompido por segurança.");
+            if (iterationCount >= maxIterations) console.warn(`Loop de 'enquanto' atingiu o limite de ${maxIterations} iterações.`);
             i++; // Skip the action block that was part of the loop.
         }
       // --- Handle simple action blocks ---
@@ -152,7 +154,7 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
                 alert("Por favor, insira um número válido.");
             }
         }
-    // For 'while' blocks, prompt the user to select a condition.
+    // For 'while' blocks, prompt for a condition and then a max iteration count.
     } else if (blockType === 'while') {
         const conditionInput = prompt("Digite a condição para repetir o próximo bloco:\n1 - caminhoLivre\n2 - naoChegouNoObjetivo", "1");
         let condition: ConditionType | null = null;
@@ -163,7 +165,15 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
         }
 
         if (condition) {
-            setProgram([...program, { type: 'while', condition }]);
+            const maxIterationsStr = prompt("Defina um limite máximo de repetições (para segurança):", "10");
+            if (maxIterationsStr) {
+                const maxIterations = parseInt(maxIterationsStr, 10);
+                 if (!isNaN(maxIterations) && maxIterations > 0 && maxIterations < 100) { // Keep safety net
+                    setProgram([...program, { type: 'while', condition, maxIterations }]);
+                } else {
+                    alert("Por favor, insira um número válido entre 1 e 99.");
+                }
+            }
         } else {
             alert("Condição inválida. Por favor, escolha uma das opções.");
         }
@@ -238,7 +248,7 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
                 >
                   <span className="font-mono mr-2 text-gray-500">{index + 1}.</span>
                   {block.type === 'repeat' ? `Repetir ${block.times} vezes o próximo` :
-                   block.type === 'while' && block.condition ? `Enquanto (${conditionTranslations[block.condition]})` :
+                   block.type === 'while' && block.condition ? `Enquanto (${conditionTranslations[block.condition]}) [max: ${block.maxIterations}]` :
                    block.type}
                 </div>
               ))}

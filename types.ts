@@ -25,6 +25,7 @@ export interface ProgramBlock {
     type: BlockType;
     times?: number; // For 'repeat' type
     condition?: ConditionType; // For 'while' type
+    maxIterations?: number; // For 'while' type
 }
 
 export type Language = 'javascript' | 'python' | 'cpp';
