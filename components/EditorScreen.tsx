@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { Level, BlockType, PlayerState, Grid, ResultState, Language, ProgramBlock, SimpleBlockType } from '../types';
-import { executeStep, checkSuccess } from '../game/engine';
+import type { Level, BlockType, PlayerState, Grid, ResultState, Language, ProgramBlock, SimpleBlockType, ConditionType } from '../types';
+import { executeStep, checkSuccess, checkCondition } from '../game/engine';
 import { ResetIcon, TrashIcon, PlayIcon } from './Icon';
 import { playBlockExecuteSound, playClearSound, playClickSound } from '../services/audioService';
 
@@ -23,6 +23,11 @@ const PLAYER_ROTATION = {
   down: 'rotate-90',
   left: 'rotate-180',
   right: 'rotate-0',
+};
+
+const conditionTranslations: Record<ConditionType, string> = {
+    pathAhead: "caminho livre à frente",
+    notAtGoal: "não chegou no objetivo",
 };
 
 const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevelComplete, preferredLanguage }) => {
@@ -55,10 +60,9 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
       if (block.type === 'repeat') {
         const repeatCount = block.times || 0;
         const nextBlockToRepeat = program[i + 1];
-        if (nextBlockToRepeat && nextBlockToRepeat.type !== 'repeat') {
+        if (nextBlockToRepeat && nextBlockToRepeat.type !== 'repeat' && nextBlockToRepeat.type !== 'while') {
           for (let j = 0; j < repeatCount; j++) {
             playBlockExecuteSound();
-            // Highlight will stay on the repeat block during execution, which is fine.
             await new Promise(resolve => setTimeout(resolve, 300));
             const { newPlayerState, grid } = executeStep(tempPlayerState, nextBlockToRepeat.type as SimpleBlockType, tempGrid);
             tempPlayerState = newPlayerState;
@@ -66,7 +70,25 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
             setPlayerState(tempPlayerState);
             setCurrentGrid(tempGrid);
           }
-          i++; // Skip the next block in the main loop as it has been executed
+          i++; 
+        }
+      } else if (block.type === 'while') {
+        const condition = block.condition;
+        const nextBlockToRepeat = program[i + 1];
+        if (condition && nextBlockToRepeat && nextBlockToRepeat.type !== 'repeat' && nextBlockToRepeat.type !== 'while') {
+            let safetyCounter = 0;
+            while(checkCondition(condition, tempPlayerState, tempGrid) && safetyCounter < 100) {
+                playBlockExecuteSound();
+                await new Promise(resolve => setTimeout(resolve, 300));
+                const { newPlayerState, grid } = executeStep(tempPlayerState, nextBlockToRepeat.type as SimpleBlockType, tempGrid);
+                tempPlayerState = newPlayerState;
+                tempGrid = grid;
+                setPlayerState(tempPlayerState);
+                setCurrentGrid(tempGrid);
+                safetyCounter++;
+            }
+            if (safetyCounter >= 100) console.warn("Loop de 'enquanto' interrompido por segurança.");
+            i++;
         }
       } else {
         playBlockExecuteSound();
@@ -105,11 +127,25 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
         const timesStr = prompt("Quantas vezes repetir o próximo bloco?", "3");
         if (timesStr) {
             const times = parseInt(timesStr, 10);
-            if (!isNaN(times) && times > 0 && times < 100) { // Basic validation
+            if (!isNaN(times) && times > 0 && times < 100) {
                 setProgram([...program, { type: 'repeat', times }]);
             } else {
                 alert("Por favor, insira um número válido.");
             }
+        }
+    } else if (blockType === 'while') {
+        const conditionInput = prompt("Digite a condição para repetir o próximo bloco:\n1 - caminhoLivre\n2 - naoChegouNoObjetivo", "1");
+        let condition: ConditionType | null = null;
+        if (conditionInput === '1' || conditionInput?.toLowerCase() === 'caminholivre') {
+            condition = 'pathAhead';
+        } else if (conditionInput === '2' || conditionInput?.toLowerCase() === 'naochegounoobjetivo') {
+            condition = 'notAtGoal';
+        }
+
+        if (condition) {
+            setProgram([...program, { type: 'while', condition }]);
+        } else {
+            alert("Condição inválida. Por favor, escolha uma das opções.");
         }
     } else {
         setProgram([...program, { type: blockType }]);
@@ -180,7 +216,9 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
                   }`}
                 >
                   <span className="font-mono mr-2 text-gray-500">{index + 1}.</span>
-                  {block.type === 'repeat' ? `Repetir ${block.times} vezes o próximo` : block.type}
+                  {block.type === 'repeat' ? `Repetir ${block.times} vezes o próximo` :
+                   block.type === 'while' && block.condition ? `Enquanto (${conditionTranslations[block.condition]})` :
+                   block.type}
                 </div>
               ))}
               {program.length === 0 && <p className="text-gray-500 text-center p-4 m-auto">Adicione blocos aqui</p>}

@@ -17,12 +17,14 @@ export interface Tile {
 export type Grid = Tile[][];
 
 export type SimpleBlockType = 'forward' | 'left' | 'right' | 'pickup';
-export type LoopBlockType = 'repeat';
+export type ConditionType = 'pathAhead' | 'notAtGoal';
+export type LoopBlockType = 'repeat' | 'while';
 export type BlockType = SimpleBlockType | LoopBlockType;
 
 export interface ProgramBlock {
     type: BlockType;
     times?: number; // For 'repeat' type
+    condition?: ConditionType; // For 'while' type
 }
 
 export type Language = 'javascript' | 'python' | 'cpp';

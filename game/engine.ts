@@ -1,4 +1,4 @@
-import type { PlayerState, Level, Grid, SimpleBlockType } from '../types';
+import type { PlayerState, Level, Grid, SimpleBlockType, ConditionType } from '../types';
 
 export function executeStep(player: PlayerState, block: SimpleBlockType, grid: Grid): { newPlayerState: PlayerState; grid: Grid } {
   let { x, y, dir, hasItem } = player;
@@ -31,6 +31,24 @@ export function executeStep(player: PlayerState, block: SimpleBlockType, grid: G
         break;
   }
   return { newPlayerState: { x, y, dir, hasItem }, grid: newGrid };
+}
+
+export function checkCondition(condition: ConditionType, player: PlayerState, grid: Grid): boolean {
+    switch(condition) {
+        case 'pathAhead': {
+            const { x, y, dir } = player;
+            if (dir === 'right') return x < grid[0].length - 1 && grid[y][x + 1].type !== 'wall';
+            if (dir === 'left') return x > 0 && grid[y][x - 1].type !== 'wall';
+            if (dir === 'down') return y < grid.length - 1 && grid[y + 1][x].type !== 'wall';
+            if (dir === 'up') return y > 0 && grid[y - 1][x].type !== 'wall';
+            return false;
+        }
+        case 'notAtGoal': {
+            return grid[player.y][player.x].type !== 'goal';
+        }
+        default:
+            return false;
+    }
 }
 
 export function checkSuccess(player: PlayerState, level: Level): boolean {

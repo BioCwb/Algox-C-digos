@@ -551,7 +551,7 @@ export const LEVELS: Level[] = [
     availableBlocks: ['forward', 'left', 'right', 'pickup'],
     solutionLength: 11,
     codeExamples: {
-      javascript: `player.moveForward();\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward();\nplayer.moveForward();\nplayer.pickupItem();\n//... e agora, como voltar?`,
+      javascript: `// O caminho para o item exige um grande desvio.\nplayer.moveForward();\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward();\nplayer.moveForward();\nplayer.pickupItem();\n//... e agora, como voltar?`,
       python: `player.move_forward()\nplayer.move_forward()\nplayer.turn_right()\nplayer.move_forward()\nplayer.move_forward()\nplayer.pickup_item()\n#... e agora, como voltar?`,
       cpp: `player.moveForward();\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward();\nplayer.moveForward();\nplayer.pickupItem();\n//... e agora, como voltar?`,
     },
@@ -861,6 +861,22 @@ export const LEVELS: Level[] = [
     }
   },
   {
+    id: 49,
+    name: "A Ponte Nebulosa",
+    description: "Você não vê o fim do caminho. Avance até o objetivo.",
+    grid: [
+        [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'goal' }],
+    ],
+    initialPlayerState: { x: 0, y: 0, dir: 'right', hasItem: false },
+    availableBlocks: ['forward', 'while'],
+    solutionLength: 2,
+    codeExamples: {
+        javascript: `// Quando não se sabe o fim, use 'while'.\nwhile (player.isNotAtGoal()) {\n  player.moveForward();\n}`,
+        python: `# Quando não se sabe o fim, use 'while'.\nwhile player.is_not_at_goal():\n  player.move_forward()`,
+        cpp: `// Quando não se sabe o fim, use 'while'.\nwhile (player.isNotAtGoal()) {\n  player.moveForward();\n}`,
+    }
+  },
+  {
     id: 50,
     name: "O Grande Labirinto",
     description: "Paciência e planejamento são as chaves.",
@@ -878,6 +894,23 @@ export const LEVELS: Level[] = [
         javascript: `// Mantenha o controle de suas curvas!\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward(); // ...`,
         python: `# Mantenha o controle de suas curvas!\nplayer.move_forward()\nplayer.turn_right()\nplayer.move_forward() # ...`,
         cpp: `// Mantenha o controle de suas curvas!\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward(); // ...`,
+    }
+  },
+  {
+    id: 51,
+    name: "Seguindo a Parede",
+    description: "Mantenha a parede à sua direita e avance enquanto houver caminho.",
+    grid: [
+        [{type: 'start'}, {type: 'path'}, {type: 'path'}, {type: 'path'}, {type: 'goal'}],
+        [{type: 'wall'}, {type: 'wall'}, {type: 'wall'}, {type: 'wall'}, {type: 'wall'}],
+    ],
+    initialPlayerState: {x: 0, y: 0, dir: 'right', hasItem: false},
+    availableBlocks: ['forward', 'while'],
+    solutionLength: 2,
+    codeExamples: {
+        javascript: `// Use 'while' com a condição 'pathAhead'.\nwhile (player.hasPathAhead()) {\n  player.moveForward();\n}`,
+        python: `# Use 'while' com a condição 'pathAhead'.\nwhile player.has_path_ahead():\n  player.move_forward()`,
+        cpp: `// Use 'while' com a condição 'pathAhead'.\nwhile (player.hasPathAhead()) {\n  player.moveForward();\n}`,
     }
   },
   {
