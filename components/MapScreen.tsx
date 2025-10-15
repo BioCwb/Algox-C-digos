@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { Level, PlayerProgress } from '../types';
 import { LockIcon, StarIcon, UserIcon } from './Icon';
 import { playClickSound } from '../services/audioService';
@@ -12,6 +12,18 @@ interface MapScreenProps {
 }
 
 const MapScreen: React.FC<MapScreenProps> = ({ levels, progress, onSelectLevel, onOpenProfile }) => {
+
+  const highestCompletedLevelId = useMemo(() => {
+    return Math.max(0, ...Object.keys(progress)
+        .filter(levelId => progress[parseInt(levelId)]?.stars > 0)
+        .map(levelId => parseInt(levelId))
+    );
+  }, [progress]);
+  
+  // Show first 5 levels initially. After that, show one level beyond the highest completed one.
+  const highestVisibleLevelId = Math.max(5, highestCompletedLevelId + 1);
+
+  const visibleLevels = levels.filter(level => level.id <= highestVisibleLevelId);
 
   const handleLevelClick = (levelId: number) => {
     playClickSound();
@@ -30,7 +42,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ levels, progress, onSelectLevel, 
             <p className="text-sky-600 mb-12">Complete fases para desbloquear caminhos secretos</p>
             
             <div className="flex flex-wrap items-center justify-center gap-8">
-                {levels.map(level => {
+                {visibleLevels.map(level => {
                 const levelProgress = progress[level.id];
                 const isUnlocked = levelProgress?.unlocked;
 
@@ -52,7 +64,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ levels, progress, onSelectLevel, 
                         {[...Array(3)].map((_, i) => (
                             <StarIcon
                             key={i}
-                            className={`w-5 h-5 ${i < levelProgress.stars ? 'text-yellow-400 fill-current' : 'text-sky-300'}`}
+                            className={`w-5 h-5 ${i < (levelProgress?.stars || 0) ? 'text-yellow-400 fill-current' : 'text-sky-300'}`}
                             />
                         ))}
                         </div>
