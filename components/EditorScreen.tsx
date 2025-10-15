@@ -1,163 +1,209 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
-import type { Level, BlockType, PlayerState, Grid, ResultState } from '../types';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import type { Level, BlockType, PlayerState, Grid, ResultState, Language } from '../types';
 import { executeStep, checkSuccess } from '../game/engine';
-import { PlayIcon, ResetIcon, TrashIcon, MapIcon } from './Icon';
-import { playClickSound, playBlockExecuteSound, playClearSound } from '../services/audioService';
+import { ResetIcon, TrashIcon, PlayIcon } from './Icon';
+import { playBlockExecuteSound, playClearSound, playClickSound } from '../services/audioService';
 
-const BLOCK_META: { [key in BlockType]: { label: string; color: string } } = {
-  forward: { label: 'Avançar', color: 'bg-blue-500' },
-  left: { label: 'Virar ⬅️', color: 'bg-green-500' },
-  right: { label: 'Virar ➡️', color: 'bg-yellow-500' },
-  pickup: { label: 'Pegar 💎', color: 'bg-purple-500' },
+interface EditorScreenProps {
+  level: Level;
+  onBackToMap: () => void;
+  onLevelComplete: (result: ResultState) => void;
+  preferredLanguage: Language;
+}
+
+const TILE_COLORS = {
+  path: 'bg-gray-200',
+  wall: 'bg-gray-800',
+  goal: 'bg-green-500',
+  start: 'bg-blue-500',
 };
 
-const Player: React.FC<{ dir: PlayerState['dir'] }> = ({ dir }) => {
-    const rotation = { up: '-rotate-90', right: 'rotate-0', down: 'rotate-90', left: 'rotate-180' }[dir];
-    return <div className={`w-3/4 h-3/4 rounded-md bg-orange-500 transition-transform transform ${rotation} flex items-center justify-end p-1 text-white shadow-inner`}><div className="w-1/3 h-1/3 bg-orange-200 rounded-sm"></div></div>;
+const PLAYER_ROTATION = {
+  up: '-rotate-90',
+  down: 'rotate-90',
+  left: 'rotate-180',
+  right: 'rotate-0',
 };
 
-const EditorScreen: React.FC<{ level: Level; onBackToMap: () => void; onLevelComplete: (result: ResultState) => void; }> = 
-({ level, onBackToMap, onLevelComplete }) => {
-  const [workspace, setWorkspace] = useState<BlockType[]>([]);
-  const [player, setPlayer] = useState<PlayerState>(level.playerStart);
-  const [grid, setGrid] = useState<Grid>(level.grid);
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [executionStep, setExecutionStep] = useState<number | null>(null);
+const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevelComplete, preferredLanguage }) => {
+  const [program, setProgram] = useState<BlockType[]>([]);
+  const [playerState, setPlayerState] = useState<PlayerState>(level.initialPlayerState);
+  const [currentGrid, setCurrentGrid] = useState<Grid>(level.grid);
+  const [isRunning, setIsRunning] = useState(false);
+  const [activeStep, setActiveStep] = useState<number | null>(null);
 
-  const displayGrid = useMemo(() => {
-    const newGrid = JSON.parse(JSON.stringify(grid));
-    for (let r = 0; r < newGrid.length; r++) {
-      for (let c = 0; c < newGrid[r].length; c++) {
-        if (newGrid[r][c].type === 'player') newGrid[r][c].type = 'empty';
-      }
-    }
-    newGrid[player.y][player.x].type = 'player';
-    return newGrid;
-  }, [player, grid]);
+  const resetState = useCallback(() => {
+    setPlayerState(level.initialPlayerState);
+    setCurrentGrid(JSON.parse(JSON.stringify(level.grid))); // Deep copy
+    setIsRunning(false);
+    setActiveStep(null);
+  }, [level]);
 
-  const reset = () => {
-    setPlayer(level.playerStart);
-    setGrid(level.grid);
-    setIsExecuting(false);
-    setExecutionStep(null);
-  };
-  
-  useEffect(reset, [level]);
+  useEffect(() => {
+    resetState();
+  }, [level, resetState]);
 
-  const addBlock = (block: BlockType) => {
-    if (isExecuting) return;
-    playClickSound();
-    setWorkspace([...workspace, block]);
-  };
+  const handleRun = async () => {
+    setIsRunning(true);
+    let tempPlayerState = { ...level.initialPlayerState };
+    let tempGrid = JSON.parse(JSON.stringify(level.grid));
 
-  const clearWorkspace = () => {
-    if (isExecuting) return;
-    if (workspace.length > 0) {
-      playClearSound();
-      setWorkspace([]);
-    }
-  };
-  
-  const handleReset = () => {
-    if (isExecuting) return;
-    playClickSound();
-    reset();
-  };
-
-  const runCode = () => {
-    if (isExecuting) return;
-    playClickSound();
-    reset();
-    setIsExecuting(true);
-    let currentStep = 0;
-    let currentPlayer = level.playerStart;
-    let currentGrid = level.grid;
-
-    const interval = setInterval(() => {
-      if (currentStep >= workspace.length) {
-        clearInterval(interval);
-        const success = checkSuccess(currentPlayer, level);
-        const stars = success ? (workspace.length <= level.solutionLength ? 3 : workspace.length <= level.solutionLength + 2 ? 2 : 1) : 0;
-        setTimeout(() => {
-          onLevelComplete({ levelId: level.id, stars, success });
-          setIsExecuting(false);
-          setExecutionStep(null);
-        }, 500);
-        return;
-      }
-      
+    for (let i = 0; i < program.length; i++) {
+      setActiveStep(i);
       playBlockExecuteSound();
-      setExecutionStep(currentStep);
-      const { newPlayerState, grid: newGrid } = executeStep(currentPlayer, workspace[currentStep], currentGrid);
-      currentPlayer = newPlayerState;
-      currentGrid = newGrid;
-      setPlayer(currentPlayer);
-      setGrid(currentGrid);
-      currentStep++;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const { newPlayerState, grid } = executeStep(tempPlayerState, program[i], tempGrid);
+      tempPlayerState = newPlayerState;
+      tempGrid = grid;
+      setPlayerState(tempPlayerState);
+      setCurrentGrid(tempGrid);
+    }
+
+    const success = checkSuccess(tempPlayerState, level);
+    
+    let stars = 0;
+    if (success) {
+      if (program.length <= level.solutionLength) {
+        stars = 3;
+      } else if (program.length <= level.solutionLength + 2) {
+        stars = 2;
+      } else {
+        stars = 1;
+      }
+    }
+
+    setTimeout(() => {
+      onLevelComplete({ levelId: level.id, success, stars });
+      setIsRunning(false);
+      setActiveStep(null);
     }, 500);
   };
 
+  const handleAddBlock = (block: BlockType) => {
+    playClickSound();
+    setProgram([...program, block]);
+  };
+
+  const handleClearProgram = () => {
+    playClearSound();
+    setProgram([]);
+  };
+  
+  const handleReset = () => {
+    playClickSound();
+    resetState();
+  }
+
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-gray-100">
-      {/* Left side: Editor */}
-      <div className="w-full md:w-1/3 flex flex-col p-4 bg-white shadow-lg z-10">
-        <div className="flex items-center justify-between mb-4">
-            <button onClick={onBackToMap} className="flex items-center gap-2 text-gray-600 hover:text-blue-600 font-semibold">
-                <MapIcon className="w-5 h-5" />
-                <span>Mapa</span>
-            </button>
-            <h2 className="text-xl font-bold text-gray-800">Nível {level.id}: {level.name}</h2>
+    <div className="flex flex-col h-screen bg-gray-100 font-sans">
+      <header className="flex items-center justify-between p-4 bg-white shadow-md z-10">
+        <button onClick={onBackToMap} className="px-4 py-2 text-sky-600 font-bold rounded-lg hover:bg-sky-100 transition-colors">
+          &larr; Voltar ao Mapa
+        </button>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-800">{level.name}</h1>
+          <p className="text-gray-600">{level.description}</p>
         </div>
-        
-        <div className="mb-4">
-          <h3 className="font-bold mb-2 text-gray-600">Blocos</h3>
-          <div className="flex flex-wrap gap-2">
-            {level.availableBlocks.map(blockType => (
-              <button key={blockType} onClick={() => addBlock(blockType)} disabled={isExecuting} className={`px-3 py-2 text-white font-semibold rounded-md shadow transform transition-transform hover:scale-105 ${BLOCK_META[blockType].color} disabled:opacity-50 disabled:hover:scale-100`}>
-                {BLOCK_META[blockType].label}
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        <div className="flex-grow bg-gray-100 rounded-lg p-2 flex flex-col min-h-0">
-            <div className="flex justify-between items-center mb-2">
-                <h3 className="font-bold text-gray-600">Programa</h3>
-                <button onClick={clearWorkspace} disabled={isExecuting || workspace.length === 0} className="p-1 text-gray-500 hover:text-red-500 disabled:text-gray-300">
-                    <TrashIcon className="w-5 h-5"/>
-                </button>
-            </div>
-          <div className="flex-grow overflow-y-auto space-y-1 p-1">
-            {workspace.map((block, index) => (
-              <div key={index} className={`p-2 text-white rounded text-sm shadow-sm transition-all ${BLOCK_META[block].color} ${executionStep === index ? 'ring-2 ring-offset-2 ring-yellow-400' : ''}`}>
-                {index+1}. {BLOCK_META[block].label}
+        <div className="w-40"></div>
+      </header>
+
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+        <main className="flex-1 flex items-center justify-center p-4 overflow-auto">
+          <div
+            className="relative grid gap-1 bg-gray-400 p-2 rounded-lg shadow-inner"
+            style={{ gridTemplateColumns: `repeat(${level.grid[0].length}, minmax(0, 1fr))` }}
+          >
+            {currentGrid.flat().map((tile, index) => (
+              <div
+                key={index}
+                className={`w-16 h-16 rounded ${TILE_COLORS[tile.type]} flex items-center justify-center`}
+              >
+                {tile.item && <div className="w-6 h-6 bg-yellow-400 rounded-full shadow-md animate-pulse"></div>}
               </div>
             ))}
-            {workspace.length === 0 && <p className="text-gray-400 text-center text-sm italic mt-4">Clique nos blocos para adicioná-los aqui.</p>}
-          </div>
-        </div>
-      </div>
-      
-      {/* Right side: Game */}
-      <div className="w-full md:w-2/3 flex flex-col items-center justify-center p-4 bg-gray-200">
-        <div className="bg-gray-800 p-2 rounded-lg shadow-inner" style={{display: 'grid', gridTemplateColumns: `repeat(${level.grid[0].length}, 4rem)`, gap: '0.25rem'}}>
-          {displayGrid.flat().map((tile, index) => (
-            <div key={index} className="w-16 h-16 rounded flex items-center justify-center bg-gray-600">
-              {tile.type === 'goal' && <div className="w-10 h-10 rounded-full bg-green-500/80 animate-pulse border-4 border-green-400"></div>}
-              {tile.type === 'player' && <Player dir={player.dir} />}
-              {tile.item && <div className="text-2xl animate-pulse">💎</div>}
+            <div
+              className="absolute transition-all duration-300 ease-in-out"
+              style={{
+                top: `calc(0.5rem + ${playerState.y} * (4rem + 0.25rem))`,
+                left: `calc(0.5rem + ${playerState.x} * (4rem + 0.25rem))`,
+              }}
+            >
+              <div className={`w-16 h-16 flex items-center justify-center text-white text-5xl transform transition-transform duration-300 ${PLAYER_ROTATION[playerState.dir]}`}>
+                <div className="drop-shadow-lg">&#10148;</div>
+                {playerState.hasItem && <div className="absolute w-4 h-4 bg-yellow-400 rounded-full bottom-1 border-2 border-white"></div>}
+              </div>
             </div>
-          ))}
-        </div>
-        <div className="mt-4 flex space-x-4">
-          <button onClick={handleReset} disabled={isExecuting} className="px-6 py-3 bg-white text-gray-800 font-bold rounded-lg shadow hover:bg-gray-50 disabled:opacity-50 flex items-center gap-2">
-            <ResetIcon className="w-5 h-5"/> Resetar
-          </button>
-          <button onClick={runCode} disabled={isExecuting || workspace.length === 0} className="px-8 py-3 bg-green-500 text-white font-bold rounded-lg shadow hover:bg-green-600 disabled:opacity-50 disabled:bg-green-300 flex items-center gap-2">
-            <PlayIcon className="w-5 h-5 fill-white"/> Executar
-          </button>
-        </div>
+          </div>
+        </main>
+
+        <aside className="w-full md:w-96 bg-white p-4 overflow-y-auto flex flex-col shadow-lg border-t md:border-t-0 md:border-l border-gray-200">
+          <div className="flex-1">
+            <h2 className="text-lg font-bold mb-2 text-gray-700">Seu Programa</h2>
+            <div className="bg-gray-100 p-2 rounded-lg min-h-[150px] flex flex-col gap-1 text-sm border mb-4">
+              {program.map((block, index) => (
+                <div
+                  key={index}
+                  className={`px-3 py-2 rounded-md font-medium capitalize transition-colors ${
+                    activeStep === index ? 'bg-yellow-300 text-black shadow-md' : 'bg-white text-gray-800'
+                  }`}
+                >
+                  <span className="font-mono mr-2 text-gray-500">{index + 1}.</span>{block}
+                </div>
+              ))}
+              {program.length === 0 && <p className="text-gray-500 text-center p-4 m-auto">Adicione blocos aqui</p>}
+            </div>
+            
+            <h2 className="text-lg font-bold mb-2 text-gray-700">Exemplo de Código</h2>
+            <div className="bg-gray-800 text-white p-3 rounded-lg font-mono text-xs">
+                <pre><code>{level.codeExamples[preferredLanguage]}</code></pre>
+            </div>
+
+          </div>
+          
+          <div className="mt-auto pt-4">
+            <h2 className="text-lg font-bold mb-2 text-gray-700">Blocos Disponíveis</h2>
+            <div className="flex flex-wrap gap-2 mb-4 p-2 bg-gray-100 rounded-lg">
+              {level.availableBlocks.map(block => (
+                <button
+                  key={block}
+                  onClick={() => handleAddBlock(block)}
+                  disabled={isRunning}
+                  className="px-3 py-2 bg-sky-500 text-white font-semibold rounded-md hover:bg-sky-600 disabled:bg-gray-400 disabled:cursor-not-allowed capitalize transition-transform transform hover:scale-105"
+                >
+                  {block}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleRun}
+                disabled={isRunning || program.length === 0}
+                className="flex-1 px-4 py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+              >
+                <PlayIcon className="w-5 h-5" /> Executar
+              </button>
+              <button
+                onClick={handleClearProgram}
+                disabled={isRunning || program.length === 0}
+                title="Limpar Programa"
+                className="p-3 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                <TrashIcon className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleReset}
+                disabled={isRunning}
+                title="Resetar"
+                className="p-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                <ResetIcon className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
   );

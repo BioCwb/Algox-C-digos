@@ -1,3 +1,5 @@
+
+
 import { GoogleGenAI, Type } from "@google/genai";
 import type { StorySegment, GameState, GeminiResponse } from '../types';
 
@@ -67,7 +69,7 @@ async function callGemini(prompt: string): Promise<GeminiResponse> {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: prompt,
+      contents: { parts: [{ text: prompt }] },
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",

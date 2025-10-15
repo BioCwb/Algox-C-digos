@@ -3,15 +3,19 @@ import React, { useState } from 'react';
 import { 
     createUserWithEmailAndPassword, 
     signInWithEmailAndPassword,
-    signInWithPopup
+    signInWithPopup,
+    GoogleAuthProvider
 } from 'firebase/auth';
 import { auth, googleProvider } from '../services/firebase';
+import { createUserProfile, getUserProfile } from '../services/firestoreService';
+import type { Language } from '../types';
 import { GoogleIcon } from './Icon';
 
 const LoginScreen: React.FC = () => {
     const [isSignUp, setIsSignUp] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [preferredLanguage, setPreferredLanguage] = useState<Language>('javascript');
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -22,7 +26,8 @@ const LoginScreen: React.FC = () => {
 
         try {
             if (isSignUp) {
-                await createUserWithEmailAndPassword(auth, email, password);
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await createUserProfile(userCredential.user.uid, email, preferredLanguage);
             } else {
                 await signInWithEmailAndPassword(auth, email, password);
             }
@@ -37,7 +42,13 @@ const LoginScreen: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            await signInWithPopup(auth, googleProvider);
+            const result = await signInWithPopup(auth, googleProvider);
+            const user = result.user;
+            // Check if profile exists, if not, create one
+            const profile = await getUserProfile(user.uid);
+            if (!profile) {
+                await createUserProfile(user.uid, user.email || '', 'javascript'); // Default to JS
+            }
         } catch (err: any) {
              setError(err.message);
         } finally {
@@ -78,10 +89,26 @@ const LoginScreen: React.FC = () => {
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Senha"
+                                placeholder="Senha (mínimo 6 caracteres)"
                                 required
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
                             />
+                            {isSignUp && (
+                                <div>
+                                    <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-1">Linguagem Preferida</label>
+                                    <select
+                                        id="language"
+                                        value={preferredLanguage}
+                                        onChange={(e) => setPreferredLanguage(e.target.value as Language)}
+                                        required
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
+                                    >
+                                        <option value="javascript">JavaScript</option>
+                                        <option value="python">Python</option>
+                                        <option value="cpp">C++</option>
+                                    </select>
+                                </div>
+                            )}
                         </div>
                         <button
                             type="submit"

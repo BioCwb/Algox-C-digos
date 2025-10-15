@@ -1,7 +1,6 @@
+// ---- Types for Block-based Coding Game ----
 
-export type Direction = 'up' | 'right' | 'down' | 'left';
-
-export type BlockType = 'forward' | 'left' | 'right' | 'pickup';
+export type Direction = 'up' | 'down' | 'left' | 'right';
 
 export interface PlayerState {
   x: number;
@@ -11,19 +10,27 @@ export interface PlayerState {
 }
 
 export interface Tile {
-  type: 'player' | 'empty' | 'goal' | 'wall';
+  type: 'path' | 'wall' | 'goal' | 'start';
   item?: boolean;
 }
 
 export type Grid = Tile[][];
 
+export type BlockType = 'forward' | 'left' | 'right' | 'pickup';
+
+export type Language = 'javascript' | 'python' | 'cpp';
+
 export interface Level {
   id: number;
   name: string;
+  description: string;
   grid: Grid;
-  playerStart: PlayerState;
+  initialPlayerState: PlayerState;
   availableBlocks: BlockType[];
-  solutionLength: number;
+  solutionLength: number; // For star calculation
+  codeExamples: {
+      [key in Language]: string;
+  };
 }
 
 export interface LevelProgress {
@@ -31,9 +38,9 @@ export interface LevelProgress {
     stars: number;
 }
 
-export type PlayerProgress = {
+export interface PlayerProgress {
     [levelId: number]: LevelProgress;
-};
+}
 
 export interface ResultState {
     success: boolean;
@@ -41,7 +48,14 @@ export interface ResultState {
     stars: number;
 }
 
-// FIX: Add missing type definitions for StorySegment, GameState, and GeminiResponse.
+export interface UserProfile {
+    email: string;
+    preferredLanguage: Language;
+}
+
+
+// ---- Types for Gemini Text Adventure Game ----
+
 export interface StorySegment {
   type: 'player' | 'narrator' | 'error';
   text: string;
@@ -51,6 +65,7 @@ export interface GameState {
   location: string;
   inventory: string[];
   objective: string;
+  gameOver: boolean;
 }
 
 export interface GeminiResponse {

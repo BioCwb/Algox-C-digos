@@ -1,19 +1,23 @@
 
+
 import React, { useMemo, useRef, useState } from 'react';
 import type { User } from 'firebase/auth';
 import { updateProfile } from 'firebase/auth';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import type { PlayerProgress, Level, LevelProgress } from '../types';
+import type { PlayerProgress, Level, LevelProgress, UserProfile, Language } from '../types';
 import { UserIcon, StarIcon, CloseIcon, AwardIcon, LogOutIcon, PencilIcon } from './Icon';
 import { auth, storage } from '../services/firebase';
+import { updateUserProfile } from '../services/firestoreService';
 
 interface ProfileScreenProps {
   user: User;
+  userProfile: UserProfile;
   progress: PlayerProgress;
   levels: Level[];
   onClose: () => void;
   onSignOut: () => void;
   onUserUpdate: (user: User) => void;
+  onProfileUpdate: (profile: UserProfile) => void;
 }
 
 interface Achievement {
@@ -23,9 +27,11 @@ interface Achievement {
     isUnlocked: boolean;
 }
 
-const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, progress, levels, onClose, onSignOut, onUserUpdate }) => {
+const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, userProfile, progress, levels, onClose, onSignOut, onUserUpdate, onProfileUpdate }) => {
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [language, setLanguage] = useState<Language>(userProfile.preferredLanguage);
+    const [isSaving, setIsSaving] = useState(false);
 
     const stats = useMemo(() => {
         const totalStars = Object.values(progress).reduce((sum: number, level: LevelProgress) => sum + (level.stars || 0), 0);
@@ -60,15 +66,28 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, progress, levels, o
             const photoURL = await getDownloadURL(snapshot.ref);
 
             await updateProfile(auth.currentUser, { photoURL });
-            onUserUpdate({ ...auth.currentUser, photoURL }); // Update parent state
+            onUserUpdate({ ...auth.currentUser, photoURL });
         } catch (error) {
             console.error("Error uploading profile picture:", error);
-            // Optionally show an error message to the user
         } finally {
             setIsUploading(false);
         }
     };
-
+    
+    const handleLanguageChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newLanguage = e.target.value as Language;
+        setLanguage(newLanguage);
+        setIsSaving(true);
+        try {
+            await updateUserProfile(user.uid, { preferredLanguage: newLanguage });
+            onProfileUpdate({ ...userProfile, preferredLanguage: newLanguage });
+        } catch (error) {
+            console.error("Failed to update language", error);
+            setLanguage(userProfile.preferredLanguage); // Revert on error
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in" onClick={onClose}>
@@ -82,7 +101,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, progress, levels, o
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-sky-50 rounded-lg mb-6">
             <div className="flex items-center gap-4">
-                <div className="relative w-16 h-16 flex-shrink-0">
+                 <div className="relative w-16 h-16 flex-shrink-0">
                     <button onClick={handleAvatarClick} disabled={isUploading} className="w-full h-full rounded-full bg-sky-200 flex items-center justify-center group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">
                         {user.photoURL ? (
                             <img src={user.photoURL} alt="Foto do perfil" className="w-full h-full rounded-full object-cover"/>
@@ -114,6 +133,24 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, progress, levels, o
                 <LogOutIcon className="w-5 h-5" />
                 Sair
             </button>
+        </div>
+        
+        <div className="mb-6">
+            <label htmlFor="language-select" className="block text-sm font-bold text-sky-800 mb-2">Linguagem de Programação</label>
+            <div className="relative">
+                <select 
+                    id="language-select"
+                    value={language}
+                    onChange={handleLanguageChange}
+                    disabled={isSaving}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white appearance-none"
+                >
+                    <option value="javascript">JavaScript</option>
+                    <option value="python">Python</option>
+                    <option value="cpp">C++</option>
+                </select>
+                {isSaving && <div className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin rounded-full h-5 w-5 border-b-2 border-sky-600"></div>}
+            </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
