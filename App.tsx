@@ -9,11 +9,12 @@ import CodeQuizScreen from './components/CodeQuizScreen';
 import ResultScreen from './components/ResultScreen';
 import ProfileScreen from './components/ProfileScreen';
 import LoginScreen from './components/LoginScreen';
+import AdventureScreen from './components/AdventureScreen';
 import { auth } from './services/firebase';
 import { getUserProgress, saveUserProgress, getUserProfile, createUserProfile } from './services/firestoreService';
 
 const App: React.FC = () => {
-    const [screen, setScreen] = useState<'map' | 'editor' | 'code-quiz'>('map');
+    const [screen, setScreen] = useState<'map' | 'editor' | 'code-quiz' | 'adventure'>('map');
     const [result, setResult] = useState<ResultState | null>(null);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     
@@ -74,6 +75,10 @@ const App: React.FC = () => {
         } else {
             setScreen('editor');
         }
+    };
+    
+    const handleStartAdventure = () => {
+        setScreen('adventure');
     };
 
     const handleBackToMap = () => {
@@ -156,6 +161,7 @@ const App: React.FC = () => {
                     progress={progress} 
                     onSelectLevel={handleSelectLevel} 
                     onOpenProfile={() => setIsProfileOpen(true)}
+                    onStartAdventure={handleStartAdventure}
                 />
             )}
             {screen === 'editor' && currentLevel && currentLevel.levelType === 'blocks' && (
@@ -174,6 +180,9 @@ const App: React.FC = () => {
                     onBackToMap={handleBackToMap}
                     onQuizComplete={handleLevelComplete}
                 />
+            )}
+            {screen === 'adventure' && (
+                <AdventureScreen onBackToMap={handleBackToMap} />
             )}
             {result && (
                 <ResultScreen 

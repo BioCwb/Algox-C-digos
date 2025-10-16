@@ -189,9 +189,9 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
         const code = level.codeExamples[selectedCodeLang];
         const result = await explainCode(code, selectedCodeLang);
         setExplanation(result);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to get explanation:", error);
-        setExplanation("Desculpe, não foi possível gerar uma explicação no momento.");
+        setExplanation(error.message);
     } finally {
         setIsExplaining(false);
     }

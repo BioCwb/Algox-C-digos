@@ -1,7 +1,20 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type { StorySegment, GameState, GeminiResponse, Language } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+let ai: GoogleGenAI | null = null;
+
+function getAiInstance(): GoogleGenAI {
+    if (ai) {
+        return ai;
+    }
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+        throw new Error("API_KEY_MISSING");
+    }
+    ai = new GoogleGenAI({ apiKey });
+    return ai;
+}
+
 
 const responseSchema = {
   type: Type.OBJECT,
@@ -65,7 +78,8 @@ function buildPrompt(storyHistory: StorySegment[], gameState: GameState, playerA
 
 async function callGemini(prompt: string): Promise<GeminiResponse> {
   try {
-    const response = await ai.models.generateContent({
+    const genAI = getAiInstance();
+    const response = await genAI.models.generateContent({
       model: "gemini-2.5-flash",
       contents: { parts: [{ text: prompt }] },
       config: {
@@ -79,9 +93,12 @@ async function callGemini(prompt: string): Promise<GeminiResponse> {
 
     const jsonText = response.text.trim();
     return JSON.parse(jsonText) as GeminiResponse;
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === "API_KEY_MISSING") {
+        throw new Error("A funcionalidade de IA não está disponível. A chave de API do Gemini não foi configurada no ambiente.");
+    }
     console.error("Error calling Gemini API:", error);
-    throw new Error("The story could not continue. The ancient spirits are momentarily confused.");
+    throw new Error("A história não pôde continuar. Os espíritos antigos estão momentaneamente confusos.");
   }
 }
 
@@ -106,7 +123,8 @@ export async function explainCode(code: string, language: Language): Promise<str
     const prompt = `Por favor, explique o seguinte trecho de código em ${language} para um iniciante:\n\n\`\`\`${language}\n${code}\n\`\`\``;
 
     try {
-        const response = await ai.models.generateContent({
+        const genAI = getAiInstance();
+        const response = await genAI.models.generateContent({
             model: "gemini-2.5-flash",
             contents: { parts: [{ text: prompt }] },
             config: {
@@ -116,7 +134,10 @@ export async function explainCode(code: string, language: Language): Promise<str
         });
         
         return response.text;
-    } catch (error) {
+    } catch (error: any) {
+        if (error.message === "API_KEY_MISSING") {
+             throw new Error("A funcionalidade de IA não está disponível. A chave de API do Gemini não foi configurada no ambiente.");
+        }
         console.error("Error calling Gemini API for code explanation:", error);
         throw new Error("Não foi possível gerar a explicação do código.");
     }

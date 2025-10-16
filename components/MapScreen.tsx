@@ -1,7 +1,7 @@
 
 import React, { useMemo } from 'react';
 import type { Level, PlayerProgress } from '../types';
-import { LockIcon, StarIcon, UserIcon } from './Icon';
+import { LockIcon, StarIcon, UserIcon, CompassIcon } from './Icon';
 import { playClickSound } from '../services/audioService';
 
 interface MapScreenProps {
@@ -9,9 +9,10 @@ interface MapScreenProps {
   progress: PlayerProgress;
   onSelectLevel: (levelId: number) => void;
   onOpenProfile: () => void;
+  onStartAdventure: () => void;
 }
 
-const MapScreen: React.FC<MapScreenProps> = ({ levels, progress, onSelectLevel, onOpenProfile }) => {
+const MapScreen: React.FC<MapScreenProps> = ({ levels, progress, onSelectLevel, onOpenProfile, onStartAdventure }) => {
 
   const highestCompletedLevelId = useMemo(() => {
     return Math.max(0, ...Object.keys(progress)
@@ -33,6 +34,11 @@ const MapScreen: React.FC<MapScreenProps> = ({ levels, progress, onSelectLevel, 
   const handleProfileClick = () => {
     playClickSound();
     onOpenProfile();
+  };
+  
+  const handleAdventureClick = () => {
+    playClickSound();
+    onStartAdventure();
   };
 
   return (
@@ -76,7 +82,10 @@ const MapScreen: React.FC<MapScreenProps> = ({ levels, progress, onSelectLevel, 
         </div>
         <footer className="w-full max-w-lg mt-12 p-4">
             <div className="flex justify-around bg-white/70 rounded-full shadow-inner px-4 py-2">
-                 <button disabled className="px-6 py-2 font-bold text-gray-400 cursor-not-allowed">Sandbox</button>
+                 <button onClick={handleAdventureClick} className="px-6 py-2 font-bold text-sky-700 hover:bg-sky-100 rounded-full flex items-center gap-2">
+                    <CompassIcon className="w-5 h-5" />
+                    Aventura
+                 </button>
                  <button onClick={handleProfileClick} className="px-6 py-2 font-bold text-sky-700 hover:bg-sky-100 rounded-full flex items-center gap-2">
                     <UserIcon className="w-5 h-5" />
                     Perfil
