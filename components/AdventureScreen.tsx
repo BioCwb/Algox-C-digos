@@ -15,12 +15,11 @@ interface BunnyState {
 
 const TILE_SIZE = 'w-12 h-12 md:w-16 md:h-16'; // Responsive tile size
 
-// Initial game setup
-// FIX: Corrected the INITIAL_GRID values to be strings and fixed syntax errors.
+// A solvable grid layout
 const INITIAL_GRID = [
-    ['S', 'P', 'P', 'P', 'X'],
-    ['X', 'X', 'X', 'P', 'X'],
-    ['C', 'P', 'P', 'P', 'C'],
+    ['S', 'P', 'P', 'P', 'C'],
+    ['X', 'X', 'X', 'X', 'P'],
+    ['C', 'P', 'P', 'P', 'P'],
     ['P', 'X', 'X', 'X', 'X'],
     ['P', 'P', 'P', 'P', 'C'],
 ];
@@ -46,6 +45,38 @@ const ROTATION_MAP: { [key in Direction]: number } = {
     'UP': 270,
 };
 
+const CORRECT_SOLUTION_CODE = `// 1. Chegar na primeira cenoura (canto superior direito)
+Adiante()
+Adiante()
+Adiante()
+Adiante()
+
+// 2. Descer até a linha da segunda cenoura
+Girar()
+Adiante()
+Adiante()
+
+// 3. Atravessar para pegar a segunda cenoura (canto esquerdo)
+Girar()
+Adiante()
+Adiante()
+Adiante()
+Adiante()
+
+// 4. Voltar para a coluna da direita
+Girar()
+Girar()
+Adiante()
+Adiante()
+Adiante()
+Adiante()
+
+// 5. Descer para a última cenoura
+Girar()
+Adiante()
+Adiante()
+`;
+
 const getInitialBunnyState = (): BunnyState => {
     const startPos = { x: 0, y: 0 };
     for (let y = 0; y < INITIAL_GRID.length; y++) {
@@ -67,6 +98,8 @@ const AdventureScreen: React.FC<AdventureScreenProps> = ({ onBackToMap }) => {
     const [logs, setLogs] = useState<string[]>([]);
     const [isRunning, setIsRunning] = useState(false);
     const [isFinished, setIsFinished] = useState<{ status: 'idle' | 'success' | 'fail', message: string }>({ status: 'idle', message: '' });
+    const [failures, setFailures] = useState(0);
+    const [showSolution, setShowSolution] = useState(false);
     const logContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -86,11 +119,19 @@ const AdventureScreen: React.FC<AdventureScreenProps> = ({ onBackToMap }) => {
         setCollectedCarrots(0);
         setLogs([]);
         setIsFinished({ status: 'idle', message: '' });
+        setFailures(0);
+        setShowSolution(false);
     };
 
     const handleRunCode = async () => {
-        handleReset();
+        // Soft reset for re-running
         setIsRunning(true);
+        setGrid(INITIAL_GRID);
+        setBunnyState(getInitialBunnyState());
+        setCollectedCarrots(0);
+        setLogs([]);
+        setIsFinished({ status: 'idle', message: '' });
+
         logMessage("Execução iniciada...");
 
         const commands = code.match(/(adiante|girar)\s*\(\s*\)/gi) || [];
@@ -127,6 +168,12 @@ const AdventureScreen: React.FC<AdventureScreenProps> = ({ onBackToMap }) => {
                     tempGrid[nextPos.y][nextPos.x] === 'X'
                 ) {
                     logMessage("ERRO: Coelho bateu em um obstáculo!");
+                    const newFailures = failures + 1;
+                    setFailures(newFailures);
+                     if (newFailures >= 3) {
+                        setShowSolution(true);
+                        logMessage("DICA: Parece que você está com dificuldades. Dê uma olhada no exemplo de solução!");
+                    }
                     setIsFinished({ status: 'fail', message: 'O coelho bateu em um obstáculo! Tente novamente.' });
                     setIsRunning(false);
                     return;
@@ -150,9 +197,17 @@ const AdventureScreen: React.FC<AdventureScreenProps> = ({ onBackToMap }) => {
         if (tempCollectedCarrots === TOTAL_CARROTS) {
             logMessage("SUCESSO: Todas as cenouras foram coletadas!");
             setIsFinished({ status: 'success', message: 'Parabéns! Você guiou o coelho para todas as cenouras!' });
+            setFailures(0);
+            setShowSolution(false);
         } else {
             logMessage(`FALHA: Apenas ${tempCollectedCarrots} de ${TOTAL_CARROTS} cenouras foram coletadas.`);
             setIsFinished({ status: 'fail', message: `Quase lá! Faltaram ${TOTAL_CARROTS - tempCollectedCarrots} cenoura(s).` });
+            const newFailures = failures + 1;
+            setFailures(newFailures);
+            if (newFailures >= 3) {
+                setShowSolution(true);
+                logMessage("DICA: Parece que você está com dificuldades. Dê uma olhada no exemplo de solução!");
+            }
         }
 
         setIsRunning(false);
@@ -184,7 +239,7 @@ const AdventureScreen: React.FC<AdventureScreenProps> = ({ onBackToMap }) => {
                         </p>
                         <ul className="text-sm mt-2 list-disc list-inside bg-gray-50 p-2 rounded">
                             <li><code>Adiante()</code> - Avança uma posição.</li>
-                            <li><code>Girar()</code> - Vira 90° para a direita.</li>
+                            <li><code>Girar()</code> - Vira 90° para a direita (sentido horário).</li>
                         </ul>
                     </div>
                     <div className="flex-1 flex items-center justify-center p-4 bg-green-100 rounded-lg shadow-inner">
@@ -213,8 +268,8 @@ const AdventureScreen: React.FC<AdventureScreenProps> = ({ onBackToMap }) => {
                 </div>
 
                 {/* Right Panel: Code Editor & Logs */}
-                <div className="lg:w-1/2 flex flex-col gap-4">
-                     <div className="flex-1 flex flex-col bg-white rounded-lg shadow">
+                <div className="lg:w-1/2 flex flex-col gap-4 overflow-y-auto">
+                     <div className="flex-grow flex flex-col bg-white rounded-lg shadow min-h-[200px]">
                         <h2 className="text-xl font-bold p-4 border-b">Editor de Código</h2>
                         <textarea
                             value={code}
@@ -235,12 +290,23 @@ const AdventureScreen: React.FC<AdventureScreenProps> = ({ onBackToMap }) => {
                            )}
                         </div>
                      </div>
-                     <div className="flex gap-4">
+                     {showSolution && (
+                        <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded-r-lg shadow animate-in fade-in">
+                            <h3 className="text-lg font-bold text-yellow-800">Exemplo de Solução</h3>
+                            <p className="text-sm text-yellow-700 mb-2">
+                                Aqui está um exemplo de código que resolve o desafio. Tente entender a lógica!
+                            </p>
+                            <pre className="bg-gray-800 text-white p-3 rounded font-mono text-xs overflow-x-auto">
+                                <code>{CORRECT_SOLUTION_CODE}</code>
+                            </pre>
+                        </div>
+                     )}
+                     <div className="flex gap-4 mt-auto">
                         <button onClick={handleRunCode} disabled={isRunning} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition-colors disabled:bg-gray-400">
                             <PlayIcon className="w-5 h-5" /> Executar
                         </button>
                         <button onClick={handleReset} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-500 text-white font-bold rounded-lg hover:bg-gray-600 transition-colors">
-                            <ResetIcon className="w-5 h-5" /> Resetar
+                            <ResetIcon className="w-5 h-5" /> Resetar Desafio
                         </button>
                      </div>
                 </div>
