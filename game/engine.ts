@@ -76,6 +76,11 @@ export function checkCondition(condition: ConditionType, player: PlayerState, gr
  * @returns A boolean indicating if the level was successfully completed.
  */
 export function checkSuccess(player: PlayerState, level: Level): boolean {
+    // FIX: Add a type guard to ensure we only access `grid` on BlockLevel types.
+    if (level.levelType !== 'blocks') {
+        return false;
+    }
+
     let goalCoords = {x: -1, y: -1};
     // Find the coordinates of the goal tile.
     for(let y=0; y<level.grid.length; y++) {

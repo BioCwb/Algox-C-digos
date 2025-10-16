@@ -30,10 +30,12 @@ export interface ProgramBlock {
 
 export type Language = 'javascript' | 'python' | 'cpp';
 
-export interface Level {
+
+export interface BlockLevel {
   id: number;
   name: string;
   description: string;
+  levelType: 'blocks';
   grid: Grid;
   initialPlayerState: PlayerState;
   availableBlocks: BlockType[];
@@ -42,6 +44,25 @@ export interface Level {
       [key in Language]: string;
   };
 }
+
+export interface CodeQuizQuestion {
+  codeSnippet: [string, string]; // Code before and after the blank
+  options: string[];
+  correctOptionIndex: number;
+  explanation: string; // Explanation for the correct answer
+}
+
+export interface CodeQuizLevel {
+  id: number;
+  name: string;
+  description: string;
+  levelType: 'code-quiz';
+  questions: CodeQuizQuestion[];
+  language: Language;
+}
+
+export type Level = BlockLevel | CodeQuizLevel;
+
 
 export interface LevelProgress {
     unlocked: boolean;

@@ -1,7 +1,5 @@
-
-
 import { GoogleGenAI, Type } from "@google/genai";
-import type { StorySegment, GameState, GeminiResponse } from '../types';
+import type { StorySegment, GameState, GeminiResponse, Language } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -95,4 +93,31 @@ export async function getInitialStory(): Promise<GeminiResponse> {
 export async function getNextStoryStep(storyHistory: StorySegment[], gameState: GameState, playerAction: string): Promise<GeminiResponse> {
     const prompt = buildPrompt(storyHistory, gameState, playerAction);
     return callGemini(prompt);
+}
+
+export async function explainCode(code: string, language: Language): Promise<string> {
+    const systemInstruction = `You are a helpful programming assistant. Your task is to explain code snippets to a beginner programmer.
+- Explain the code in a clear, step-by-step manner.
+- Describe the purpose of each line or block of code.
+- Summarize the overall goal of the snippet.
+- Keep the language simple and encouraging.
+- The explanation should be in Brazilian Portuguese.`;
+    
+    const prompt = `Por favor, explique o seguinte trecho de código em ${language} para um iniciante:\n\n\`\`\`${language}\n${code}\n\`\`\``;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: { parts: [{ text: prompt }] },
+            config: {
+                systemInstruction: systemInstruction,
+                temperature: 0.5,
+            },
+        });
+        
+        return response.text;
+    } catch (error) {
+        console.error("Error calling Gemini API for code explanation:", error);
+        throw new Error("Não foi possível gerar a explicação do código.");
+    }
 }

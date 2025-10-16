@@ -5,6 +5,7 @@ export const LEVELS: Level[] = [
     id: 1,
     name: "O Início",
     description: "Use o bloco 'avançar' para chegar ao objetivo.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'goal' }],
     ],
@@ -21,6 +22,7 @@ export const LEVELS: Level[] = [
     id: 2,
     name: "A Curva",
     description: "Use os blocos de virar para mudar de direção.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'wall' }],
       [{ type: 'wall' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }],
@@ -39,6 +41,7 @@ export const LEVELS: Level[] = [
     id: 3,
     name: "Coleta",
     description: "Pegue o item antes de ir para o objetivo.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path', item: true }, { type: 'path' }, { type: 'goal' }],
     ],
@@ -55,6 +58,7 @@ export const LEVELS: Level[] = [
     id: 4,
     name: "Labirinto Simples",
     description: "Navegue pelo labirinto para alcançar o seu objetivo.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'wall' }, { type: 'path' }],
         [{ type: 'wall' }, { type: 'path' }, { type: 'path' }, { type: 'path' }],
@@ -73,6 +77,7 @@ export const LEVELS: Level[] = [
     id: 5,
     name: "O Contorno",
     description: "Às vezes, o caminho mais longo é o único caminho.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'wall' }],
         [{ type: 'wall' }, { type: 'path' }, { type: 'wall' }],
@@ -91,6 +96,7 @@ export const LEVELS: Level[] = [
     id: 6,
     name: "Escadaria",
     description: "Suba os degraus, um passo de cada vez.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'wall' }, { type: 'wall' }],
         [{ type: 'wall' }, { type: 'path' }, { type: 'path' }, { type: 'wall' }],
@@ -109,6 +115,7 @@ export const LEVELS: Level[] = [
     id: 7,
     name: "Coleta e Entrega",
     description: "Não se esqueça do item importante!",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'path', item: true }, { type: 'path' }, { type: 'goal' }],
     ],
@@ -125,6 +132,7 @@ export const LEVELS: Level[] = [
     id: 8,
     name: "O 'U'",
     description: "Vire na hora certa para não bater na parede.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'wall' }, { type: 'goal' }],
         [{ type: 'path' }, { type: 'wall' }, { type: 'path' }],
@@ -143,6 +151,7 @@ export const LEVELS: Level[] = [
     id: 9,
     name: "Caminho Estreito",
     description: "Cuidado para não cair para os lados... espere, não tem como cair.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'goal' }],
         [{ type: 'path' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'path' }],
@@ -161,6 +170,7 @@ export const LEVELS: Level[] = [
     id: 10,
     name: "O Desvio",
     description: "Pegue o item e depois encontre o seu destino.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'goal' }],
         [{ type: 'wall' }, { type: 'wall' }, { type: 'path', item: true }, { type: 'wall' }, { type: 'wall' }],
@@ -178,6 +188,7 @@ export const LEVELS: Level[] = [
     id: 11,
     name: "Espirale",
     description: "Continue virando para chegar ao centro.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'path' }],
         [{ type: 'wall' }, { type: 'wall' }, { type: 'wall' }, { type: 'path' }],
@@ -197,6 +208,7 @@ export const LEVELS: Level[] = [
     id: 12,
     name: "Vai e Volta",
     description: "Um passo pra frente, um passo para o lado.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'wall' }],
         [{ type: 'path' }, { type: 'wall' }],
@@ -217,6 +229,7 @@ export const LEVELS: Level[] = [
     id: 13,
     name: "O Pilar",
     description: "Contorne o obstáculo no centro.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'path' }],
         [{ type: 'path' }, { type: 'wall' }, { type: 'path' }],
@@ -235,6 +248,7 @@ export const LEVELS: Level[] = [
     id: 14,
     name: "Chave e Fechadura",
     description: "Pegue a 'chave' (o item) para destravar o caminho para o objetivo.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'wall' }, { type: 'path', item: true }],
         [{ type: 'path' }, { type: 'wall' }, { type: 'path' }],
@@ -253,6 +267,7 @@ export const LEVELS: Level[] = [
     id: 15,
     name: "Slalom",
     description: "Desvie dos obstáculos em seu caminho.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'path' }],
         [{ type: 'path' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'path' }],
@@ -271,6 +286,7 @@ export const LEVELS: Level[] = [
     id: 16,
     name: "Decisão Dupla",
     description: "Qual caminho seguir? Apenas um leva ao tesouro.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'path' }, { type: 'path' }, { type: 'path', item: true }, { type: 'path' }, { type: 'path' }],
         [{ type: 'path' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'path' }],
@@ -291,6 +307,7 @@ export const LEVELS: Level[] = [
     id: 17,
     name: "A Grande Volta",
     description: "Um longo percurso para um pequeno passo.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }],
         [{ type: 'path' }, { type: 'wall' }, { type: 'wall' }, { type: 'wall' }, { type: 'wall' }],
@@ -309,6 +326,7 @@ export const LEVELS: Level[] = [
     id: 18,
     name: "Becos",
     description: "Não entre em um caminho sem saída!",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'wall' }, { type: 'goal' }],
         [{ type: 'wall' }, { type: 'path' }, { type: 'path' }, { type: 'path' }],
@@ -327,6 +345,7 @@ export const LEVELS: Level[] = [
     id: 19,
     name: "A Fortaleza",
     description: "Encontre a entrada para o objetivo bem guardado.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'wall' }, { type: 'wall' }, { type: 'wall' }, { type: 'wall' }, { type: 'wall' }],
         [{ type: 'wall' }, { type: 'goal' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }],
@@ -347,6 +366,7 @@ export const LEVELS: Level[] = [
     id: 20,
     name: "A Ilha",
     description: "Pegue o tesouro da ilha e volte para o objetivo.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'wall' }, { type: 'goal' }, { type: 'wall' }],
         [{ type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'path' }, { type: 'path' }],
@@ -365,6 +385,7 @@ export const LEVELS: Level[] = [
     id: 21,
     name: "A Longa Marcha",
     description: "Use um loop para atravessar o corredor rapidamente.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'goal' }],
     ],
@@ -381,6 +402,7 @@ export const LEVELS: Level[] = [
     id: 22,
     name: "Quadrado Perfeito",
     description: "Ande em um quadrado. Pense em repetição.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'path' }],
         [{ type: 'path' }, { type: 'wall' }, { type: 'wall' }, { type: 'path' }],
@@ -400,6 +422,7 @@ export const LEVELS: Level[] = [
     id: 23,
     name: "Cortando a Grama",
     description: "Limpe o campo em um padrão de vai e vem.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'path' }],
         [{ type: 'goal' }, { type: 'path' }, { type: 'path' }, { type: 'path' }],
@@ -417,6 +440,7 @@ export const LEVELS: Level[] = [
     id: 24,
     name: "Escada Rolante",
     description: "O padrão se repete. Você consegue enxergá-lo?",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'wall' }, { type: 'wall' }, { type: 'wall' }],
         [{ type: 'wall' }, { type: 'path' }, { type: 'path' }, { type: 'wall' }, { type: 'wall' }],
@@ -436,6 +460,7 @@ export const LEVELS: Level[] = [
     id: 25,
     name: "Coleta em Série",
     description: "Pegue todos os itens no caminho.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path', item: true }, { type: 'path' }, { type: 'path', item: true }, { type: 'goal' }],
     ],
@@ -452,6 +477,7 @@ export const LEVELS: Level[] = [
     id: 26,
     name: "Pente",
     description: "Entre e saia de cada 'dente' do pente.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'goal' }],
         [{ type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }],
@@ -469,6 +495,7 @@ export const LEVELS: Level[] = [
     id: 27,
     name: "Onda",
     description: "Siga o fluxo da onda.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'goal' }],
       [{ type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }],
@@ -486,6 +513,7 @@ export const LEVELS: Level[] = [
     id: 28,
     name: "Patrulha",
     description: "Patrulhe o perímetro para encontrar a entrada.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }],
       [{ type: 'path' }, { type: 'wall' }, { type: 'wall' }, { type: 'wall' }, { type: 'path' }],
@@ -506,6 +534,7 @@ export const LEVELS: Level[] = [
     id: 29,
     name: "Busca Vertical",
     description: "Verifique cada corredor.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }],
       [{ type: 'wall' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'wall' }],
@@ -524,6 +553,7 @@ export const LEVELS: Level[] = [
     id: 30,
     name: "Otimização",
     description: "Qual o caminho mais curto? Pense antes de se mover.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }],
       [{ type: 'path' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'path' }],
@@ -542,6 +572,7 @@ export const LEVELS: Level[] = [
     id: 31,
     name: "Guardião",
     description: "O item está guardado. Encontre uma forma de pegá-lo.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'wall' }, { type: 'goal' }],
       [{ type: 'wall' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'wall' }],
@@ -560,6 +591,7 @@ export const LEVELS: Level[] = [
     id: 32,
     name: "Volta Necessária",
     description: "Às vezes, é preciso voltar para poder avançar.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'path', item: true }],
       [{ type: 'wall' }, { type: 'wall' }, { type: 'wall' }, { type: 'path' }],
@@ -578,6 +610,7 @@ export const LEVELS: Level[] = [
     id: 33,
     name: "O Sacrifício",
     description: "Um caminho parece mais curto, mas sem o item, é inútil.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'goal' }],
       [{ type: 'wall' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }],
@@ -596,6 +629,7 @@ export const LEVELS: Level[] = [
     id: 34,
     name: "A Chave Distante",
     description: "O item está longe, mas é essencial.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path' }, { type: 'wall' }, { type: 'goal' }],
       [{ type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'path' }],
@@ -614,6 +648,7 @@ export const LEVELS: Level[] = [
     id: 35,
     name: "Labirinto do Tesouro",
     description: "Encontre o item no labirinto e depois a saída.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path' }, { type: 'wall' }, { type: 'path' }],
       [{ type: 'wall' }, { type: 'path', item: true }, { type: 'path' }, { type: 'path' }],
@@ -632,6 +667,7 @@ export const LEVELS: Level[] = [
     id: 36,
     name: "Caminho Duplo",
     description: "Colete o item e retorne pelo outro caminho.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path' }, { type: 'wall' }, { type: 'path' }, { type: 'goal' }],
       [{ type: 'wall' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'wall' }],
@@ -650,6 +686,7 @@ export const LEVELS: Level[] = [
     id: 37,
     name: "Loop Quebrado",
     description: "Um padrão quase perfeito. Adapte sua estratégia.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path' }, { type: 'wall' }, { type: 'path' }, { type: 'path' }],
       [{ type: 'wall' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'wall' }],
@@ -668,6 +705,7 @@ export const LEVELS: Level[] = [
     id: 38,
     name: "A Escolha",
     description: "Dois itens, mas você só precisa de um. Qual é o mais eficiente?",
+    levelType: 'blocks',
     grid: [
       [{ type: 'path', item: true }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'path', item: true }],
       [{ type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }],
@@ -687,6 +725,7 @@ export const LEVELS: Level[] = [
     id: 39,
     name: "Coleta em Loop",
     description: "Use um padrão repetitivo para coletar todos os itens.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path', item: true }, { type: 'path' }, { type: 'path', item: true }, { type: 'path' }],
       [{ type: 'wall' }, { type: 'wall' }, { type: 'wall' }, { type: 'wall' }, { type: 'path' }],
@@ -705,6 +744,7 @@ export const LEVELS: Level[] = [
     id: 40,
     name: "Pinça",
     description: "Entre, pegue e saia com cuidado.",
+    levelType: 'blocks',
     grid: [
         [{type: 'start'}, {type: 'path'}, {type: 'wall'}, {type: 'path'}, {type: 'goal'}],
         [{type: 'wall'}, {type: 'path'}, {type: 'path', item: true}, {type: 'path'}, {type: 'wall'}],
@@ -722,6 +762,7 @@ export const LEVELS: Level[] = [
     id: 41,
     name: "Onda Invertida",
     description: "O mesmo padrão, mas com um novo ponto de partida.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'start' }],
       [{ type: 'goal' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'path' }, { type: 'wall' }, { type: 'path' }],
@@ -739,6 +780,7 @@ export const LEVELS: Level[] = [
     id: 42,
     name: "Zig-Zag Duplo",
     description: "Um caminho de ida e volta.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path' }, { type: 'wall' }, { type: 'wall' }],
       [{ type: 'wall' }, { type: 'path' }, { type: 'path' }, { type: 'wall' }],
@@ -758,6 +800,7 @@ export const LEVELS: Level[] = [
     id: 43,
     name: "A Ponte",
     description: "Atravesse a ponte com cuidado para pegar o item.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'wall' }, { type: 'wall' }, { type: 'path', item: true }, { type: 'wall' }],
       [{ type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }],
@@ -776,6 +819,7 @@ export const LEVELS: Level[] = [
     id: 44,
     name: "Quatro Cantos",
     description: "Visite os quatro cantos para pegar tudo.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path' }, { type: 'path', item: true }],
       [{ type: 'path' }, { type: 'wall' }, { type: 'path' }],
@@ -794,6 +838,7 @@ export const LEVELS: Level[] = [
     id: 45,
     name: "O Desfiladeiro",
     description: "Um caminho estreito com um prêmio no meio.",
+    levelType: 'blocks',
     grid: [
       [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'goal' }],
       [{ type: 'wall' }, { type: 'wall' }, { type: 'path', item: true }, { type: 'wall' }, { type: 'wall' }],
@@ -811,6 +856,7 @@ export const LEVELS: Level[] = [
     id: 46,
     name: "A Longa Estrada",
     description: "Use o bloco 'repeat' para atravessar este longo caminho.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'goal' }],
     ],
@@ -827,6 +873,7 @@ export const LEVELS: Level[] = [
     id: 47,
     name: "Fazendo Quadrados",
     description: "Um caminho quadrado requer um padrão repetitivo de movimentos e curvas.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'path' }],
         [{ type: 'wall' }, { type: 'wall' }, { type: 'path' }],
@@ -845,6 +892,7 @@ export const LEVELS: Level[] = [
     id: 48,
     name: "Escadaria para o Sucesso",
     description: "O padrão se repete. Você consegue enxergá-lo e usar 'repeat'?",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'wall' }, { type: 'wall' }, { type: 'wall' }],
         [{ type: 'wall' }, { type: 'path' }, { type: 'path' }, { type: 'wall' }, { type: 'wall' }],
@@ -864,6 +912,7 @@ export const LEVELS: Level[] = [
     id: 49,
     name: "A Ponte Nebulosa",
     description: "Você não vê o fim do caminho. Avance até o objetivo.",
+    levelType: 'blocks',
     grid: [
         [{ type: 'start' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'path' }, { type: 'goal' }],
     ],
@@ -880,6 +929,7 @@ export const LEVELS: Level[] = [
     id: 50,
     name: "Labirinto Sinuoso",
     description: "O caminho é longo e cheio de curvas. Use 'enquanto' para avançar nas retas e vire quando necessário.",
+    levelType: 'blocks',
     grid: [
         [{type: 'start'}, {type: 'path'}, {type: 'path'}],
         [{type: 'wall'}, {type: 'wall'}, {type: 'path'}],
@@ -898,6 +948,7 @@ export const LEVELS: Level[] = [
     id: 51,
     name: "Seguindo a Parede",
     description: "Mantenha a parede à sua direita e avance enquanto houver caminho.",
+    levelType: 'blocks',
     grid: [
         [{type: 'start'}, {type: 'path'}, {type: 'path'}, {type: 'path'}, {type: 'goal'}],
         [{type: 'wall'}, {type: 'wall'}, {type: 'wall'}, {type: 'wall'}, {type: 'wall'}],
@@ -915,6 +966,7 @@ export const LEVELS: Level[] = [
     id: 60,
     name: "Serpente",
     description: "Siga o caminho sinuoso.",
+    levelType: 'blocks',
     grid: [
         [{type: 'start'}, {type: 'path'}, {type: 'path'}, {type: 'path'}, {type: 'wall'}, {type: 'wall'}],
         [{type: 'wall'}, {type: 'wall'}, {type: 'wall'}, {type: 'path'}, {type: 'path'}, {type: 'path'}],
@@ -935,6 +987,7 @@ export const LEVELS: Level[] = [
     id: 70,
     name: "Precisão Cirúrgica",
     description: "Um movimento errado e você terá que recomeçar.",
+    levelType: 'blocks',
     grid: [
         [{type: 'start'}, {type: 'wall'}, {type: 'path'}, {type: 'wall'}, {type: 'path'}],
         [{type: 'path'}, {type: 'wall'}, {type: 'path'}, {type: 'wall'}, {type: 'path'}],
@@ -955,6 +1008,7 @@ export const LEVELS: Level[] = [
     id: 80,
     name: "O Cofre",
     description: "Pegue o item para 'destrancar' o objetivo.",
+    levelType: 'blocks',
     grid: [
         [{type: 'wall'}, {type: 'wall'}, {type: 'wall'}, {type: 'path', item: true}, {type: 'wall'}, {type: 'wall'}],
         [{type: 'wall'}, {type: 'path'}, {type: 'path'}, {type: 'path'}, {type: 'path'}, {type: 'wall'}],
@@ -975,6 +1029,7 @@ export const LEVELS: Level[] = [
     id: 90,
     name: "Quase Lá",
     description: "O fim está próximo, mas os desafios são maiores.",
+    levelType: 'blocks',
     grid: [
         [{type: 'start'}, {type: 'wall'}, {type: 'path'}, {type: 'path'}, {type: 'path'}, {type: 'path'}],
         [{type: 'path'}, {type: 'path'}, {type: 'path'}, {type: 'wall'}, {type: 'wall'}, {type: 'path'}],
@@ -995,6 +1050,7 @@ export const LEVELS: Level[] = [
     id: 99,
     name: "O Penúltimo Desafio",
     description: "Combine tudo o que você aprendeu.",
+    levelType: 'blocks',
     grid: [
         [{type: 'start'}, {type: 'path'}, {type: 'wall'}, {type: 'path'}, {type: 'path'}, {type: 'path', item: true}],
         [{type: 'wall'}, {type: 'path'}, {type: 'path'}, {type: 'path'}, {type: 'wall'}, {type: 'path'}],
@@ -1015,6 +1071,7 @@ export const LEVELS: Level[] = [
     id: 100,
     name: "A Odisséia Final",
     description: "O desafio definitivo. Você é um Mestre dos Blocos?",
+    levelType: 'blocks',
     grid: [
         [{type: 'start'}, {type: 'path'}, {type: 'wall'}, {type: 'path'}, {type: 'wall'}, {type: 'path'}, {type: 'path'}],
         [{type: 'wall'}, {type: 'path'}, {type: 'wall'}, {type: 'path'}, {type: 'wall'}, {type: 'path'}, {type: 'wall'}],
@@ -1030,5 +1087,41 @@ export const LEVELS: Level[] = [
         python: `# O final da jornada. Use toda sua sabedoria.\nplayer.turn_right()\nplayer.turn_right() #...`,
         cpp: `// O final da jornada. Use toda sua sabedoria.\nplayer.turnRight();\nplayer.turnRight(); //...`,
     }
+  },
+  {
+    id: 101,
+    name: "Escrevendo Código",
+    description: "Complete o código para resolver o problema. Escolha a opção correta.",
+    levelType: 'code-quiz',
+    language: 'javascript',
+    questions: [
+      {
+        codeSnippet: [
+          `// Este loop deve imprimir os números de 0 a 4.\n`,
+          ` (let i = 0; i < 5; i++) {\n  console.log(i);\n}`
+        ],
+        options: ['while', 'for', 'if'],
+        correctOptionIndex: 1,
+        explanation: "A palavra-chave 'for' é usada para criar um loop que executa um bloco de código um número específico de vezes."
+      },
+      {
+        codeSnippet: [
+          `// Este loop deve continuar enquanto 'i' for menor que 10.\nfor (let i = 0; `,
+          `; i++) {\n  // ...\n}`
+        ],
+        options: ['i > 10', 'i <= 10', 'i < 10'],
+        correctOptionIndex: 2,
+        explanation: "A condição 'i < 10' garante que o loop execute para os valores de i de 0 a 9, parando quando i se torna 10."
+      },
+      {
+        codeSnippet: [
+          `// Para contar de um em um, usamos o operador de incremento.\nfor (let i = 0; i < 5; `,
+          `) {\n  console.log(i);\n}`
+        ],
+        options: ['i = i + 2', 'i++', 'i--'],
+        correctOptionIndex: 1,
+        explanation: "'i++' é uma forma abreviada de 'i = i + 1' e é comumente usado em loops 'for' para incrementar o contador a cada iteração."
+      }
+    ]
   },
 ];

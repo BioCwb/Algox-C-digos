@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { Level, BlockType, PlayerState, Grid, ResultState, Language, ProgramBlock, SimpleBlockType, ConditionType } from '../types';
+// FIX: Added 'BlockType' to the import list to resolve a type error.
+import type { BlockLevel, PlayerState, Grid, ResultState, Language, ProgramBlock, SimpleBlockType, ConditionType, BlockType } from '../types';
 import { executeStep, checkSuccess, checkCondition } from '../game/engine';
+import { explainCode } from '../services/geminiService';
 import { ResetIcon, TrashIcon, PlayIcon } from './Icon';
 import { playBlockExecuteSound, playClearSound, playClickSound } from '../services/audioService';
 
 interface EditorScreenProps {
-  level: Level;
+  level: BlockLevel;
   onBackToMap: () => void;
   onLevelComplete: (result: ResultState) => void;
   preferredLanguage: Language;
@@ -36,6 +38,9 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
   const [currentGrid, setCurrentGrid] = useState<Grid>(level.grid);
   const [isRunning, setIsRunning] = useState(false);
   const [activeStep, setActiveStep] = useState<number | null>(null);
+  const [selectedCodeLang, setSelectedCodeLang] = useState<Language>(preferredLanguage);
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [isExplaining, setIsExplaining] = useState(false);
 
   const resetState = useCallback(() => {
     setPlayerState(level.initialPlayerState);
@@ -47,70 +52,62 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
   useEffect(() => {
     resetState();
   }, [level, resetState]);
+  
+  useEffect(() => {
+    setExplanation(null);
+    setIsExplaining(false);
+  }, [level, selectedCodeLang]);
 
-  /**
-   * Runs the user's program, interpreting each block and updating the player's state.
-   */
+
   const handleRun = async () => {
     setIsRunning(true);
     let tempPlayerState = { ...level.initialPlayerState };
     let tempGrid = JSON.parse(JSON.stringify(level.grid));
 
-    // Iterate through the program blocks one by one.
     for (let i = 0; i < program.length; i++) {
       const block = program[i];
       setActiveStep(i);
 
-      // --- Handle 'repeat' loops ---
       if (block.type === 'repeat') {
         const repeatCount = block.times || 0;
         const nextBlockToRepeat = program[i + 1];
-        // Ensure there is a next block and it's a simple action (not another loop).
         if (nextBlockToRepeat && nextBlockToRepeat.type !== 'repeat' && nextBlockToRepeat.type !== 'while') {
           for (let j = 0; j < repeatCount; j++) {
             playBlockExecuteSound();
-            await new Promise(resolve => setTimeout(resolve, 300)); // Animation delay
+            await new Promise(resolve => setTimeout(resolve, 300));
             const { newPlayerState, grid } = executeStep(tempPlayerState, nextBlockToRepeat.type as SimpleBlockType, tempGrid);
             tempPlayerState = newPlayerState;
             tempGrid = grid;
-            // Update UI
             setPlayerState(tempPlayerState);
             setCurrentGrid(tempGrid);
           }
-          i++; // Manually increment 'i' to skip the action block that was just repeated.
+          i++; 
         }
-      // --- Handle 'while' loops ---
       } else if (block.type === 'while') {
         const condition = block.condition;
-        // Use the user-defined iteration limit, with a fallback for safety.
         const maxIterations = block.maxIterations || 100;
         const nextBlockToRepeat = program[i + 1];
-        // Ensure there's a condition and a simple action block to repeat.
         if (condition && nextBlockToRepeat && nextBlockToRepeat.type !== 'repeat' && nextBlockToRepeat.type !== 'while') {
-            let iterationCount = 0; // Prevents infinite loops.
-            // Keep executing the next block as long as the condition is true and we're within the iteration limit.
+            let iterationCount = 0;
             while(checkCondition(condition, tempPlayerState, tempGrid) && iterationCount < maxIterations) {
                 playBlockExecuteSound();
-                await new Promise(resolve => setTimeout(resolve, 300)); // Animation delay
+                await new Promise(resolve => setTimeout(resolve, 300));
                 const { newPlayerState, grid } = executeStep(tempPlayerState, nextBlockToRepeat.type as SimpleBlockType, tempGrid);
                 tempPlayerState = newPlayerState;
                 tempGrid = grid;
-                // Update UI
                 setPlayerState(tempPlayerState);
                 setCurrentGrid(tempGrid);
                 iterationCount++;
             }
             if (iterationCount >= maxIterations) console.warn(`Loop de 'enquanto' atingiu o limite de ${maxIterations} iterações.`);
-            i++; // Skip the action block that was part of the loop.
+            i++; 
         }
-      // --- Handle simple action blocks ---
       } else {
         playBlockExecuteSound();
-        await new Promise(resolve => setTimeout(resolve, 300)); // Animation delay
+        await new Promise(resolve => setTimeout(resolve, 300));
         const { newPlayerState, grid } = executeStep(tempPlayerState, block.type as SimpleBlockType, tempGrid);
         tempPlayerState = newPlayerState;
         tempGrid = grid;
-        // Update UI
         setPlayerState(tempPlayerState);
         setCurrentGrid(tempGrid);
       }
@@ -118,7 +115,6 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
 
     const success = checkSuccess(tempPlayerState, level);
     
-    // Calculate stars based on program length compared to the optimal solution.
     let stars = 0;
     if (success) {
       if (program.length <= level.solutionLength) {
@@ -130,7 +126,6 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
       }
     }
 
-    // Show the result screen after a short delay.
     setTimeout(() => {
       onLevelComplete({ levelId: level.id, success, stars });
       setIsRunning(false);
@@ -138,12 +133,8 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
     }, 500);
   };
 
-  /**
-   * Adds a new block to the program list. Prompts for details if it's a loop block.
-   */
   const handleAddBlock = (blockType: BlockType) => {
     playClickSound();
-    // For 'repeat' blocks, prompt the user for the number of repetitions.
     if (blockType === 'repeat') {
         const timesStr = prompt("Quantas vezes repetir o próximo bloco?", "3");
         if (timesStr) {
@@ -154,7 +145,6 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
                 alert("Por favor, insira um número válido.");
             }
         }
-    // For 'while' blocks, prompt for a condition and then a max iteration count.
     } else if (blockType === 'while') {
         const conditionInput = prompt("Digite a condição para repetir o próximo bloco:\n1 - caminhoLivre\n2 - naoChegouNoObjetivo", "1");
         let condition: ConditionType | null = null;
@@ -168,7 +158,7 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
             const maxIterationsStr = prompt("Defina um limite máximo de repetições (para segurança):", "10");
             if (maxIterationsStr) {
                 const maxIterations = parseInt(maxIterationsStr, 10);
-                 if (!isNaN(maxIterations) && maxIterations > 0 && maxIterations < 100) { // Keep safety net
+                 if (!isNaN(maxIterations) && maxIterations > 0 && maxIterations < 100) {
                     setProgram([...program, { type: 'while', condition, maxIterations }]);
                 } else {
                     alert("Por favor, insira um número válido entre 1 e 99.");
@@ -177,7 +167,6 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
         } else {
             alert("Condição inválida. Por favor, escolha uma das opções.");
         }
-    // For simple blocks, just add them to the program.
     } else {
         setProgram([...program, { type: blockType }]);
     }
@@ -192,6 +181,21 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
     playClickSound();
     resetState();
   }
+
+  const handleExplainCode = async () => {
+    setIsExplaining(true);
+    setExplanation(null);
+    try {
+        const code = level.codeExamples[selectedCodeLang];
+        const result = await explainCode(code, selectedCodeLang);
+        setExplanation(result);
+    } catch (error) {
+        console.error("Failed to get explanation:", error);
+        setExplanation("Desculpe, não foi possível gerar uma explicação no momento.");
+    } finally {
+        setIsExplaining(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 font-sans">
@@ -256,8 +260,39 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ level, onBackToMap, onLevel
             </div>
             
             <h2 className="text-lg font-bold mb-2 text-gray-700">Exemplo de Código</h2>
-            <div className="bg-gray-800 text-white p-3 rounded-lg font-mono text-xs">
-                <pre><code>{level.codeExamples[preferredLanguage]}</code></pre>
+            <div>
+              <div className="flex border-b border-gray-200">
+                  {(['javascript', 'python', 'cpp'] as Language[]).map(lang => (
+                      <button
+                          key={lang}
+                          onClick={() => setSelectedCodeLang(lang)}
+                          className={`px-4 py-2 font-semibold text-sm capitalize transition-colors ${selectedCodeLang === lang ? 'border-b-2 border-sky-500 text-sky-600' : 'text-gray-500 hover:bg-gray-100'}`}
+                      >
+                          {lang}
+                      </button>
+                  ))}
+              </div>
+              <div className="bg-gray-800 text-white p-3 rounded-b-lg font-mono text-xs">
+                  <pre><code>{level.codeExamples[selectedCodeLang]}</code></pre>
+              </div>
+              <div className="mt-2">
+                  <button
+                      onClick={handleExplainCode}
+                      disabled={isExplaining}
+                      className="w-full px-4 py-2 bg-sky-100 text-sky-700 font-semibold rounded-lg hover:bg-sky-200 disabled:bg-gray-200 disabled:text-gray-500 transition-colors flex items-center justify-center gap-2"
+                  >
+                      {isExplaining 
+                          ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-sky-600"></div> Gerando Explicação...</>
+                          : '✨ Explicar Código com IA'
+                      }
+                  </button>
+              </div>
+              {explanation && (
+                  <div className="mt-4 p-4 bg-sky-50 border-l-4 border-sky-400 rounded-r-lg animate-in fade-in">
+                      <h3 className="font-bold text-sky-800 mb-2">Explicação do Código</h3>
+                      <p className="text-sm text-sky-900 whitespace-pre-wrap">{explanation}</p>
+                  </div>
+              )}
             </div>
 
           </div>

@@ -5,6 +5,7 @@ import type { PlayerProgress, ResultState, UserProfile } from './types';
 import { LEVELS } from './game/levels';
 import MapScreen from './components/MapScreen';
 import EditorScreen from './components/EditorScreen';
+import CodeQuizScreen from './components/CodeQuizScreen';
 import ResultScreen from './components/ResultScreen';
 import ProfileScreen from './components/ProfileScreen';
 import LoginScreen from './components/LoginScreen';
@@ -12,7 +13,7 @@ import { auth } from './services/firebase';
 import { getUserProgress, saveUserProgress, getUserProfile, createUserProfile } from './services/firestoreService';
 
 const App: React.FC = () => {
-    const [screen, setScreen] = useState<'map' | 'editor'>('map');
+    const [screen, setScreen] = useState<'map' | 'editor' | 'code-quiz'>('map');
     const [result, setResult] = useState<ResultState | null>(null);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     
@@ -37,12 +38,9 @@ const App: React.FC = () => {
             setUser(currentUser);
             let profile = await getUserProfile(currentUser.uid);
             
-            // If profile doesn't exist, it might be a new user or an old user whose profile creation failed.
-            // Let's create one for them to make the app more resilient.
             if (!profile) {
                 console.log("No profile found for user, creating a default one.");
                 try {
-                    // Use the email from the auth object and default to javascript.
                     profile = await createUserProfile(currentUser.uid, currentUser.email, 'javascript');
                 } catch (error) {
                     console.error("Critical error: Failed to create user profile. Signing out.", error);
@@ -67,8 +65,15 @@ const App: React.FC = () => {
     }, [progress, user, userProfile]);
 
     const handleSelectLevel = (levelId: number) => {
+        const level = LEVELS.find(l => l.id === levelId);
+        if (!level) return;
+
         setCurrentLevelId(levelId);
-        setScreen('editor');
+        if (level.levelType === 'code-quiz') {
+            setScreen('code-quiz');
+        } else {
+            setScreen('editor');
+        }
     };
 
     const handleBackToMap = () => {
@@ -121,7 +126,7 @@ const App: React.FC = () => {
             const nextLevelId = result.levelId + 1;
             const nextLevel = LEVELS.find(l => l.id === nextLevelId);
             if (nextLevel) {
-                setCurrentLevelId(nextLevelId);
+                handleSelectLevel(nextLevelId);
                 setResult(null);
             } else {
                 handleBackToMap();
@@ -153,13 +158,21 @@ const App: React.FC = () => {
                     onOpenProfile={() => setIsProfileOpen(true)}
                 />
             )}
-            {screen === 'editor' && currentLevel && (
+            {screen === 'editor' && currentLevel && currentLevel.levelType === 'blocks' && (
                 <EditorScreen 
                     key={currentLevel.id} 
                     level={currentLevel} 
                     onBackToMap={handleBackToMap} 
                     onLevelComplete={handleLevelComplete}
                     preferredLanguage={userProfile.preferredLanguage}
+                />
+            )}
+             {screen === 'code-quiz' && currentLevel && currentLevel.levelType === 'code-quiz' && (
+                <CodeQuizScreen
+                    key={currentLevel.id}
+                    level={currentLevel}
+                    onBackToMap={handleBackToMap}
+                    onQuizComplete={handleLevelComplete}
                 />
             )}
             {result && (
