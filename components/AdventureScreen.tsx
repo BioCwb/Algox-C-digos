@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { StorySegment, GameState } from '../types';
 import { getInitialStory, getNextStoryStep } from '../services/geminiService';
-import Header from './Header';
 import GameStatus from './GameStatus';
 import StoryDisplay from './StoryDisplay';
 import UserInput from './UserInput';
