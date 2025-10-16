@@ -1,114 +1,250 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { StorySegment, GameState } from '../types';
-import { getInitialStory, getNextStoryStep } from '../services/geminiService';
-import GameStatus from './GameStatus';
-import StoryDisplay from './StoryDisplay';
-import UserInput from './UserInput';
-import LoadingIndicator from './LoadingIndicator';
+import { PlayIcon, ResetIcon } from './Icon';
 
 interface AdventureScreenProps {
     onBackToMap: () => void;
 }
 
+type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
+
+interface BunnyState {
+    pos: { x: number; y: number };
+    dir: Direction;
+    rotation: number;
+}
+
+const TILE_SIZE = 'w-12 h-12 md:w-16 md:h-16'; // Responsive tile size
+
+// Initial game setup
+// FIX: Corrected the INITIAL_GRID values to be strings and fixed syntax errors.
+const INITIAL_GRID = [
+    ['S', 'P', 'P', 'P', 'X'],
+    ['X', 'X', 'X', 'P', 'X'],
+    ['C', 'P', 'P', 'P', 'C'],
+    ['P', 'X', 'X', 'X', 'X'],
+    ['P', 'P', 'P', 'P', 'C'],
+];
+const TOTAL_CARROTS = INITIAL_GRID.flat().filter(c => c === 'C').length;
+
+const TILE_EMOJI: { [key: string]: string } = {
+    'P': '',
+    'X': '🌵', // Obstacle
+    'C': '🥕', // Carrot
+};
+
+const DIRECTION_VECTORS: { [key in Direction]: { x: number; y: number } } = {
+    'UP': { x: 0, y: -1 },
+    'DOWN': { x: 0, y: 1 },
+    'LEFT': { x: -1, y: 0 },
+    'RIGHT': { x: 1, y: 0 },
+};
+
+const ROTATION_MAP: { [key in Direction]: number } = {
+    'RIGHT': 0,
+    'DOWN': 90,
+    'LEFT': 180,
+    'UP': 270,
+};
+
+const getInitialBunnyState = (): BunnyState => {
+    const startPos = { x: 0, y: 0 };
+    for (let y = 0; y < INITIAL_GRID.length; y++) {
+        const x = INITIAL_GRID[y].indexOf('S');
+        if (x !== -1) {
+            startPos.x = x;
+            startPos.y = y;
+            break;
+        }
+    }
+    return { pos: startPos, dir: 'RIGHT', rotation: 0 };
+};
+
 const AdventureScreen: React.FC<AdventureScreenProps> = ({ onBackToMap }) => {
-    const [storyHistory, setStoryHistory] = useState<StorySegment[]>([]);
-    const [gameState, setGameState] = useState<GameState | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const storyEndRef = useRef<HTMLDivElement>(null);
-
-    const scrollToBottom = () => {
-        storyEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [storyHistory, isLoading]);
-
-    const startNewGame = async () => {
-        setIsLoading(true);
-        setStoryHistory([]);
-        setGameState(null);
-        try {
-            const response = await getInitialStory();
-            setGameState({
-                location: response.location,
-                inventory: response.inventory,
-                objective: response.objective,
-                gameOver: response.gameOver
-            });
-            setStoryHistory([{ type: 'narrator', text: response.story }]);
-        } catch (error: any) {
-            setStoryHistory([{ type: 'error', text: error.message }]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    const [grid, setGrid] = useState(INITIAL_GRID);
+    const [bunnyState, setBunnyState] = useState<BunnyState>(getInitialBunnyState());
+    const [collectedCarrots, setCollectedCarrots] = useState(0);
+    const [code, setCode] = useState('// Mova o coelho!\n// Use Adiante() e Girar()\n');
+    const [logs, setLogs] = useState<string[]>([]);
+    const [isRunning, setIsRunning] = useState(false);
+    const [isFinished, setIsFinished] = useState<{ status: 'idle' | 'success' | 'fail', message: string }>({ status: 'idle', message: '' });
+    const logContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        startNewGame();
-    }, []);
-
-    const handleUserInput = async (input: string) => {
-        if (!gameState || gameState.gameOver) return;
-
-        const newHistory = [...storyHistory, { type: 'player', text: input }];
-        setStoryHistory(newHistory);
-        setIsLoading(true);
-
-        try {
-            const response = await getNextStoryStep(newHistory, gameState, input);
-            setGameState({
-                location: response.location,
-                inventory: response.inventory,
-                objective: response.objective,
-                gameOver: response.gameOver
-            });
-            setStoryHistory([...newHistory, { type: 'narrator', text: response.story }]);
-        } catch (error: any) {
-            setStoryHistory([...newHistory, { type: 'error', text: error.message }]);
-        } finally {
-            setIsLoading(false);
+        if (logContainerRef.current) {
+            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
         }
+    }, [logs]);
+
+    const logMessage = (message: string) => {
+        setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}]: ${message}`]);
+    };
+
+    const handleReset = () => {
+        setIsRunning(false);
+        setGrid(INITIAL_GRID);
+        setBunnyState(getInitialBunnyState());
+        setCollectedCarrots(0);
+        setLogs([]);
+        setIsFinished({ status: 'idle', message: '' });
+    };
+
+    const handleRunCode = async () => {
+        handleReset();
+        setIsRunning(true);
+        logMessage("Execução iniciada...");
+
+        const commands = code.match(/(adiante|girar)\s*\(\s*\)/gi) || [];
+        if (commands.length === 0) {
+            logMessage("Nenhum comando válido encontrado.");
+            setIsFinished({ status: 'fail', message: "Nenhum comando válido foi encontrado no seu código." });
+            setIsRunning(false);
+            return;
+        }
+
+        let tempBunnyState = getInitialBunnyState();
+        let tempGrid = JSON.parse(JSON.stringify(INITIAL_GRID));
+        let tempCollectedCarrots = 0;
+
+        for (const command of commands) {
+            await new Promise(resolve => setTimeout(resolve, 400));
+            const cleanCommand = command.toLowerCase().replace(/[^a-z]/g, "");
+
+            if (cleanCommand === 'girar') {
+                logMessage("Comando: Girar()");
+                const directions: Direction[] = ['RIGHT', 'DOWN', 'LEFT', 'UP'];
+                const currentDirIndex = directions.indexOf(tempBunnyState.dir);
+                const nextDir = directions[(currentDirIndex + 1) % 4];
+                tempBunnyState = { ...tempBunnyState, dir: nextDir, rotation: ROTATION_MAP[nextDir] };
+                setBunnyState(tempBunnyState);
+            } else if (cleanCommand === 'adiante') {
+                logMessage("Comando: Adiante()");
+                const { x: dx, y: dy } = DIRECTION_VECTORS[tempBunnyState.dir];
+                const nextPos = { x: tempBunnyState.pos.x + dx, y: tempBunnyState.pos.y + dy };
+
+                if (
+                    nextPos.y < 0 || nextPos.y >= tempGrid.length ||
+                    nextPos.x < 0 || nextPos.x >= tempGrid[0].length ||
+                    tempGrid[nextPos.y][nextPos.x] === 'X'
+                ) {
+                    logMessage("ERRO: Coelho bateu em um obstáculo!");
+                    setIsFinished({ status: 'fail', message: 'O coelho bateu em um obstáculo! Tente novamente.' });
+                    setIsRunning(false);
+                    return;
+                }
+                
+                tempBunnyState = { ...tempBunnyState, pos: nextPos };
+                setBunnyState(tempBunnyState);
+
+                if (tempGrid[nextPos.y][nextPos.x] === 'C') {
+                    tempCollectedCarrots++;
+                    logMessage(`Cenoura coletada! (${tempCollectedCarrots}/${TOTAL_CARROTS})`);
+                    tempGrid[nextPos.y][nextPos.x] = 'P'; // Remove carrot
+                    setGrid(JSON.parse(JSON.stringify(tempGrid))); // Deep copy to trigger re-render
+                    setCollectedCarrots(tempCollectedCarrots);
+                }
+            }
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (tempCollectedCarrots === TOTAL_CARROTS) {
+            logMessage("SUCESSO: Todas as cenouras foram coletadas!");
+            setIsFinished({ status: 'success', message: 'Parabéns! Você guiou o coelho para todas as cenouras!' });
+        } else {
+            logMessage(`FALHA: Apenas ${tempCollectedCarrots} de ${TOTAL_CARROTS} cenouras foram coletadas.`);
+            setIsFinished({ status: 'fail', message: `Quase lá! Faltaram ${TOTAL_CARROTS - tempCollectedCarrots} cenoura(s).` });
+        }
+
+        setIsRunning(false);
     };
 
     return (
-        <div className="flex flex-col h-screen bg-gray-900 text-white font-sans">
-             <header className="text-center p-4 border-b border-gray-700/50 max-w-4xl w-full mx-auto flex-shrink-0">
-                <div className="flex items-center justify-between">
-                    <button onClick={onBackToMap} className="text-xs px-3 py-1.5 bg-gray-700 hover:bg-cyan-500 hover:text-gray-900 rounded-md transition-colors duration-200 font-semibold">
+        <div className="flex flex-col h-screen bg-sky-50 text-gray-800 font-sans">
+             <header className="text-center p-4 bg-white shadow-md z-10">
+                <div className="flex items-center justify-between max-w-6xl mx-auto">
+                    <button onClick={onBackToMap} className="px-4 py-2 text-sky-600 font-bold rounded-lg hover:bg-sky-100 transition-colors">
                         &larr; Voltar ao Mapa
                     </button>
                     <div className="flex items-center gap-3">
-                        <h1 className="text-xl md:text-3xl font-bold text-gray-100 tracking-wider">
-                            Aventura Gemini
+                        <h1 className="text-xl md:text-3xl font-bold tracking-tight">
+                            Desafio do Coelho Programador
                         </h1>
                     </div>
-                     <button onClick={startNewGame} className="text-xs px-3 py-1.5 bg-gray-700 hover:bg-cyan-500 hover:text-gray-900 rounded-md transition-colors duration-200 font-semibold">
-                        Novo Jogo
-                    </button>
+                     <div className="w-40 text-right"></div>
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto p-4 md:p-6">
-                <div className="max-w-4xl mx-auto">
-                    {gameState && <GameStatus gameState={gameState} />}
-                    <StoryDisplay storyHistory={storyHistory} />
-                    {isLoading && <LoadingIndicator />}
-                     {gameState?.gameOver && (
-                        <div className="mt-6 p-4 bg-cyan-900/50 border-t-2 border-cyan-500 text-center rounded-lg">
-                            <p className="font-bold text-lg text-cyan-300">FIM DE JOGO</p>
-                            <p className="text-gray-300 mt-2">Obrigado por jogar! Clique em "Novo Jogo" para começar uma nova aventura.</p>
+            <main className="flex-1 flex flex-col lg:flex-row gap-4 p-4 overflow-hidden">
+                {/* Left Panel: Instructions & Grid */}
+                <div className="lg:w-1/2 flex flex-col gap-4">
+                    <div className="p-4 bg-white rounded-lg shadow">
+                        <h2 className="text-xl font-bold mb-2">Sua Missão</h2>
+                        <p className="text-sm">
+                            O coelhinho precisa pegar todas as <strong>{TOTAL_CARROTS} cenouras</strong>. Escreva um algoritmo para guiá-lo pelo caminho certo, evitando os cactos 🌵.
+                        </p>
+                        <ul className="text-sm mt-2 list-disc list-inside bg-gray-50 p-2 rounded">
+                            <li><code>Adiante()</code> - Avança uma posição.</li>
+                            <li><code>Girar()</code> - Vira 90° para a direita.</li>
+                        </ul>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center p-4 bg-green-100 rounded-lg shadow-inner">
+                        <div className="relative grid gap-1">
+                             {grid.map((row, y) => (
+                                <div key={y} className="flex gap-1">
+                                    {row.map((cell, x) => (
+                                        <div key={`${y}-${x}`} className={`flex items-center justify-center rounded-md text-3xl ${TILE_SIZE} ${cell === 'X' ? 'bg-green-300' : 'bg-green-200'}`}>
+                                            { TILE_EMOJI[cell] }
+                                        </div>
+                                    ))}
+                                </div>
+                             ))}
+                             <div 
+                                className={`absolute flex items-center justify-center text-4xl transform transition-all duration-300 ease-in-out ${TILE_SIZE}`}
+                                style={{
+                                    top: `calc(${bunnyState.pos.y} * (100% / ${grid.length}))`,
+                                    left: `calc(${bunnyState.pos.x} * (100% / ${grid[0].length}))`,
+                                    transform: `rotate(${bunnyState.rotation}deg)`
+                                }}
+                            >
+                                <span>🐰</span>
+                             </div>
                         </div>
-                    )}
-                    <div ref={storyEndRef} />
+                    </div>
+                </div>
+
+                {/* Right Panel: Code Editor & Logs */}
+                <div className="lg:w-1/2 flex flex-col gap-4">
+                     <div className="flex-1 flex flex-col bg-white rounded-lg shadow">
+                        <h2 className="text-xl font-bold p-4 border-b">Editor de Código</h2>
+                        <textarea
+                            value={code}
+                            onChange={(e) => setCode(e.target.value)}
+                            disabled={isRunning}
+                            className="flex-1 p-4 font-mono text-sm bg-gray-800 text-green-300 rounded-b-lg resize-none focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            placeholder="Escreva seus comandos aqui..."
+                        />
+                     </div>
+                     <div className="h-48 flex flex-col bg-white rounded-lg shadow">
+                        <h2 className="text-xl font-bold p-4 border-b">Terminal de Execução</h2>
+                        <div ref={logContainerRef} className="flex-1 p-4 font-mono text-xs text-gray-500 overflow-y-auto bg-gray-50 rounded-b-lg">
+                           {logs.map((log, i) => <p key={i}>{log}</p>)}
+                           {isFinished.status !== 'idle' && (
+                            <div className={`mt-2 p-2 rounded font-sans font-bold text-sm ${isFinished.status === 'success' ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}`}>
+                                {isFinished.message}
+                            </div>
+                           )}
+                        </div>
+                     </div>
+                     <div className="flex gap-4">
+                        <button onClick={handleRunCode} disabled={isRunning} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition-colors disabled:bg-gray-400">
+                            <PlayIcon className="w-5 h-5" /> Executar
+                        </button>
+                        <button onClick={handleReset} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-500 text-white font-bold rounded-lg hover:bg-gray-600 transition-colors">
+                            <ResetIcon className="w-5 h-5" /> Resetar
+                        </button>
+                     </div>
                 </div>
             </main>
-
-            <footer className="p-4 md:p-6 border-t border-gray-700/50">
-                <div className="max-w-4xl mx-auto">
-                     <UserInput onSubmit={handleUserInput} isLoading={isLoading || (gameState?.gameOver ?? false)} />
-                </div>
-            </footer>
         </div>
     );
 };
