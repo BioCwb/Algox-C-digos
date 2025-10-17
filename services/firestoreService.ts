@@ -43,7 +43,15 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
     const profileDocRef = doc(db, 'users', userId);
     try {
         const docSnap = await getDoc(profileDocRef);
-        return docSnap.exists() ? (docSnap.data() as UserProfile) : null;
+        if (docSnap.exists()) {
+            const data = docSnap.data() as UserProfile;
+            // Default adventureLevel for backward compatibility
+            if (data.adventureLevel === undefined) {
+                data.adventureLevel = 1;
+            }
+            return data;
+        }
+        return null;
     } catch (error) {
         console.error("Error fetching user profile:", error);
         return null;
@@ -52,7 +60,11 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 
 export const createUserProfile = async (userId: string, email: string | null, preferredLanguage: Language): Promise<UserProfile> => {
     const profileDocRef = doc(db, 'users', userId);
-    const newProfile: UserProfile = { email: email || 'usuário@algox.com', preferredLanguage };
+    const newProfile: UserProfile = { 
+        email: email || 'usuário@algox.com', 
+        preferredLanguage,
+        adventureLevel: 1 
+    };
     try {
         await setDoc(profileDocRef, newProfile);
         return newProfile;

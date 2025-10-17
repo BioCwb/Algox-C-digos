@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { PlayIcon, ResetIcon, LockIcon } from './Icon';
 import { ADVENTURE_LEVELS, AdventureLevel } from '../game/adventureLevels';
+import { playClickSound } from '../services/audioService';
 
 interface AdventureScreenProps {
     onBackToMap: () => void;
+    initialLevel: number;
+    onSaveProgress: (newLevel: number) => void;
 }
 
 type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 
 interface BunnyState {
-    pos: { x: number; y: number };
+    x: number;
+    y: number;
     dir: Direction;
     rotation: number;
 }
@@ -46,7 +50,7 @@ const getInitialBunnyState = (grid: string[][]): BunnyState => {
             break;
         }
     }
-    return { pos: startPos, dir: 'RIGHT', rotation: 0 };
+    return { x: startPos.x, y: startPos.y, dir: 'RIGHT', rotation: 0 };
 };
 
 
@@ -78,14 +82,13 @@ const LockedLevelCard = ({ level }: { level: AdventureLevel }) => (
     </div>
 );
 
-// FIX: Changed component definition to use React.FC to correctly handle the 'key' prop.
 const CurrentLevelView: React.FC<{ level: AdventureLevel; onComplete: () => void; isLastLevel: boolean }> = ({ level, onComplete, isLastLevel }) => {
     const TOTAL_CARROTS = useMemo(() => level.grid.flat().filter(c => c === 'C').length, [level]);
 
     const [grid, setGrid] = useState(level.grid);
     const [bunnyState, setBunnyState] = useState<BunnyState>(() => getInitialBunnyState(level.grid));
     const [collectedCarrots, setCollectedCarrots] = useState(0);
-    const [code, setCode] = useState(`// ${level.name}\n// Use Adiante() e Girar()\n`);
+    const [code, setCode] = useState(`// ${level.name}\n// Use a API do player para mover o coelho\n`);
     const [logs, setLogs] = useState<string[]>([]);
     const [isRunning, setIsRunning] = useState(false);
     const [isFinished, setIsFinished] = useState<{ status: 'idle' | 'success' | 'fail', message: string }>({ status: 'idle', message: '' });
@@ -97,7 +100,7 @@ const CurrentLevelView: React.FC<{ level: AdventureLevel; onComplete: () => void
         setGrid(level.grid);
         setBunnyState(getInitialBunnyState(level.grid));
         setCollectedCarrots(0);
-        setCode(`// ${level.name}\n// Use Adiante() e Girar()\n`);
+        setCode(`// ${level.name}\n// Use a API do player para mover o coelho\n`);
         setLogs([]);
         setIsFinished({ status: 'idle', message: '' });
         setFailures(0);
@@ -122,63 +125,62 @@ const CurrentLevelView: React.FC<{ level: AdventureLevel; onComplete: () => void
         setIsRunning(false);
         resetForLevel();
     };
+    
+    const handleAddCommand = (command: 'forward' | 'right' | 'left' | 'loop') => {
+        playClickSound();
+        let commandText = '';
+        if (command === 'forward') {
+            commandText = 'await player.moveForward();\n';
+        } else if (command === 'right') {
+            commandText = 'await player.turnRight();\n';
+        } else if (command === 'left') {
+            commandText = 'await player.turnLeft();\n';
+        } else if (command === 'loop') {
+            const times = prompt("Quantas vezes repetir?", "3");
+            const count = parseInt(times || "0", 10);
+            if (!isNaN(count) && count > 0) {
+                 commandText = `for (let i = 0; i < ${count}; i++) {\n  // seu código aqui\n}\n`;
+            } else if (times !== null) {
+                alert("Por favor, insira um número válido.");
+            }
+        }
+        
+        if (commandText) {
+             setCode(prevCode => prevCode.endsWith('\n') ? prevCode + commandText : prevCode + '\n' + commandText);
+        }
+    };
 
     const handleRunCode = async () => {
         setIsRunning(true);
         setGrid(level.grid);
-        setBunnyState(getInitialBunnyState(level.grid));
+        let tempBunnyState = getInitialBunnyState(level.grid);
+        setBunnyState(tempBunnyState);
         setCollectedCarrots(0);
         setLogs([]);
         setIsFinished({ status: 'idle', message: '' });
 
         logMessage("Execução iniciada...");
+        await new Promise(res => setTimeout(res, 100));
 
-        const commands = code.match(/(adiante|girar)\s*\(\s*\)/gi) || [];
-        if (commands.length === 0) {
-            logMessage("Nenhum comando válido encontrado.");
-            setIsFinished({ status: 'fail', message: "Nenhum comando válido foi encontrado no seu código." });
-            setIsRunning(false);
-            return;
-        }
-
-        let tempBunnyState = getInitialBunnyState(level.grid);
         let tempGrid = JSON.parse(JSON.stringify(level.grid));
         let tempCollectedCarrots = 0;
 
-        for (const command of commands) {
-            await new Promise(resolve => setTimeout(resolve, 350));
-            const cleanCommand = command.toLowerCase().replace(/[^a-z]/g, "");
-
-            if (cleanCommand === 'girar') {
-                logMessage("Comando: Girar()");
-                const directions: Direction[] = ['RIGHT', 'DOWN', 'LEFT', 'UP'];
-                const currentDirIndex = directions.indexOf(tempBunnyState.dir);
-                const nextDir = directions[(currentDirIndex + 1) % 4];
-                tempBunnyState = { ...tempBunnyState, dir: nextDir, rotation: ROTATION_MAP[nextDir] };
-                setBunnyState(tempBunnyState);
-            } else if (cleanCommand === 'adiante') {
-                logMessage("Comando: Adiante()");
+        const player = {
+            moveForward: async () => {
+                await new Promise(resolve => setTimeout(resolve, 300));
                 const { x: dx, y: dy } = DIRECTION_VECTORS[tempBunnyState.dir];
-                const nextPos = { x: tempBunnyState.pos.x + dx, y: tempBunnyState.pos.y + dy };
+                const nextPos = { x: tempBunnyState.x + dx, y: tempBunnyState.y + dy };
 
                 if (
                     nextPos.y < 0 || nextPos.y >= tempGrid.length ||
                     nextPos.x < 0 || nextPos.x >= tempGrid[0].length ||
                     tempGrid[nextPos.y][nextPos.x] === 'X'
                 ) {
-                    logMessage("ERRO: Coelho bateu em um obstáculo!");
-                    const newFailures = failures + 1;
-                    setFailures(newFailures);
-                     if (newFailures >= 3) {
-                        setShowSolution(true);
-                        logMessage("DICA: Parece que você está com dificuldades. Dê uma olhada no exemplo de solução!");
-                    }
-                    setIsFinished({ status: 'fail', message: 'O coelho bateu em um obstáculo! Tente novamente.' });
-                    setIsRunning(false);
-                    return;
+                    logMessage(`ERRO: Coelho bateu em um obstáculo!`);
+                    throw new Error('O coelho bateu em um obstáculo!');
                 }
                 
-                tempBunnyState = { ...tempBunnyState, pos: nextPos };
+                tempBunnyState = { ...tempBunnyState, x: nextPos.x, y: nextPos.y };
                 setBunnyState(tempBunnyState);
 
                 if (tempGrid[nextPos.y][nextPos.x] === 'C') {
@@ -188,30 +190,61 @@ const CurrentLevelView: React.FC<{ level: AdventureLevel; onComplete: () => void
                     setGrid(JSON.parse(JSON.stringify(tempGrid)));
                     setCollectedCarrots(tempCollectedCarrots);
                 }
-            }
-        }
+            },
+            turnRight: async () => {
+                await new Promise(resolve => setTimeout(resolve, 300));
+                const directions: Direction[] = ['RIGHT', 'DOWN', 'LEFT', 'UP'];
+                const currentDirIndex = directions.indexOf(tempBunnyState.dir);
+                const nextDir = directions[(currentDirIndex + 1) % 4];
+                tempBunnyState = { ...tempBunnyState, dir: nextDir, rotation: ROTATION_MAP[nextDir] };
+                setBunnyState(tempBunnyState);
+            },
+            turnLeft: async () => {
+                await new Promise(resolve => setTimeout(resolve, 300));
+                const directions: Direction[] = ['RIGHT', 'DOWN', 'LEFT', 'UP'];
+                const currentDirIndex = directions.indexOf(tempBunnyState.dir);
+                const nextDir = directions[(currentDirIndex + 3) % 4];
+                tempBunnyState = { ...tempBunnyState, dir: nextDir, rotation: ROTATION_MAP[nextDir] };
+                setBunnyState(tempBunnyState);
+            },
+        };
+
+        try {
+            const asyncFunction = new Function('player', `return (async () => { ${code} })()`);
+            await asyncFunction(player);
+
+            await new Promise(resolve => setTimeout(resolve, 500));
         
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        if (TOTAL_CARROTS > 0 && tempCollectedCarrots === TOTAL_CARROTS) {
-            logMessage("SUCESSO: Todas as cenouras foram coletadas!");
-            setIsFinished({ status: 'success', message: 'Parabéns! Você guiou o coelho para todas as cenouras!' });
-            setFailures(0);
-            setShowSolution(false);
-        } else {
-            const message = TOTAL_CARROTS > 0 
-                ? `Quase lá! Faltaram ${TOTAL_CARROTS - tempCollectedCarrots} cenoura(s).`
-                : 'Objetivo não alcançado. Tente novamente.';
-            logMessage(`FALHA: ${message}`);
-            setIsFinished({ status: 'fail', message });
-            const newFailures = failures + 1;
-            setFailures(newFailures);
-            if (newFailures >= 3) {
-                setShowSolution(true);
-                logMessage("DICA: Parece que você está com dificuldades. Dê uma olhada no exemplo de solução!");
+            if (TOTAL_CARROTS > 0 && tempCollectedCarrots === TOTAL_CARROTS) {
+                logMessage("SUCESSO: Todas as cenouras foram coletadas!");
+                setIsFinished({ status: 'success', message: 'Parabéns! Você guiou o coelho para todas as cenouras!' });
+                setFailures(0);
+                setShowSolution(false);
+            } else {
+                 const message = TOTAL_CARROTS > 0 
+                    ? `Quase lá! Faltaram ${TOTAL_CARROTS - tempCollectedCarrots} cenoura(s).`
+                    : 'Objetivo não alcançado. Tente novamente.';
+                logMessage(`FALHA: ${message}`);
+                setIsFinished({ status: 'fail', message });
+                const newFailures = failures + 1;
+                setFailures(newFailures);
+                if (newFailures >= 3) {
+                    setShowSolution(true);
+                    logMessage("DICA: Parece que você está com dificuldades. Dê uma olhada no exemplo de solução!");
+                }
             }
+        } catch (e: any) {
+            logMessage(`ERRO na execução: ${e.message}`);
+             const newFailures = failures + 1;
+             setFailures(newFailures);
+             if (newFailures >= 3) {
+                 setShowSolution(true);
+                 logMessage("DICA: Parece que você está com dificuldades. Dê uma olhada no exemplo de solução!");
+             }
+             setIsFinished({ status: 'fail', message: e.message || 'Ocorreu um erro no seu código.' });
+        } finally {
+            setIsRunning(false);
         }
-        setIsRunning(false);
     };
 
     return (
@@ -226,11 +259,19 @@ const CurrentLevelView: React.FC<{ level: AdventureLevel; onComplete: () => void
                             </div>
                              <div className="text-right font-semibold text-sky-700 flex-shrink-0">
                                 Cenouras: {collectedCarrots} / {TOTAL_CARROTS}
+                                {failures > 0 && (
+                                    <div className="text-sm font-bold text-orange-600 mt-1 animate-in fade-in">
+                                        Falhas: {failures}
+                                    </div>
+                                )}
                              </div>
                         </div>
-                        <ul className="text-sm mt-2 list-disc list-inside bg-gray-50 p-2 rounded">
-                            <li><code>Adiante()</code> - Avança uma posição.</li>
-                            <li><code>Girar()</code> - Vira 90° para a direita (sentido horário).</li>
+                        <h4 className="font-bold text-sm mt-4 mb-1">API Disponível:</h4>
+                        <ul className="text-sm space-y-1 list-disc list-inside bg-gray-50 p-2 rounded">
+                            <li><code>await player.moveForward()</code> - Avança o coelho uma casa.</li>
+                            <li><code>await player.turnRight()</code> - Vira o coelho para a direita.</li>
+                            <li><code>await player.turnLeft()</code> - Vira o coelho para a esquerda.</li>
+                            <li>Use loops (<code>for</code>, <code>while</code>) para repetir ações!</li>
                         </ul>
                     </div>
                     <div className="flex-1 flex items-center justify-center p-4 bg-green-100 rounded-lg shadow-inner min-h-[300px]">
@@ -247,8 +288,8 @@ const CurrentLevelView: React.FC<{ level: AdventureLevel; onComplete: () => void
                              <div 
                                 className={`absolute flex items-center justify-center text-4xl transform transition-all duration-300 ease-in-out ${TILE_SIZE}`}
                                 style={{
-                                    top: `calc(${bunnyState.pos.y} * (100% / ${grid.length}))`,
-                                    left: `calc(${bunnyState.pos.x} * (100% / ${grid[0].length}))`,
+                                    top: `calc(${bunnyState.y} * (100% / ${grid.length}))`,
+                                    left: `calc(${bunnyState.x} * (100% / ${grid[0].length}))`,
                                     transform: `rotate(${bunnyState.rotation}deg)`
                                 }}
                             >
@@ -260,13 +301,29 @@ const CurrentLevelView: React.FC<{ level: AdventureLevel; onComplete: () => void
 
                 <div className="lg:w-1/2 flex flex-col gap-4">
                      <div className="flex-grow flex flex-col bg-white rounded-lg shadow min-h-[200px]">
-                        <h2 className="text-xl font-bold p-4 border-b">Editor de Código</h2>
+                        <div className="p-4 border-b">
+                            <h2 className="text-xl font-bold mb-2">Editor de Código (JavaScript)</h2>
+                            <div className="flex flex-wrap gap-2">
+                                <button onClick={() => handleAddCommand('forward')} disabled={isRunning} className="px-3 py-2 bg-sky-500 text-white font-semibold rounded-md hover:bg-sky-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm">
+                                    player.moveForward()
+                                </button>
+                                <button onClick={() => handleAddCommand('right')} disabled={isRunning} className="px-3 py-2 bg-sky-500 text-white font-semibold rounded-md hover:bg-sky-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm">
+                                    player.turnRight()
+                                </button>
+                                 <button onClick={() => handleAddCommand('left')} disabled={isRunning} className="px-3 py-2 bg-sky-500 text-white font-semibold rounded-md hover:bg-sky-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm">
+                                    player.turnLeft()
+                                </button>
+                                <button onClick={() => handleAddCommand('loop')} disabled={isRunning} className="px-3 py-2 bg-orange-500 text-white font-semibold rounded-md hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm">
+                                    for loop
+                                </button>
+                            </div>
+                        </div>
                         <textarea
                             value={code}
                             onChange={(e) => setCode(e.target.value)}
                             disabled={isRunning}
                             className="flex-1 p-4 font-mono text-sm bg-gray-800 text-green-300 rounded-b-lg resize-none focus:outline-none focus:ring-2 focus:ring-sky-500"
-                            placeholder="Escreva seus comandos aqui..."
+                            placeholder="Escreva seu código JavaScript aqui..."
                         />
                      </div>
                      <div className="h-48 flex flex-col bg-white rounded-lg shadow">
@@ -310,14 +367,17 @@ const CurrentLevelView: React.FC<{ level: AdventureLevel; onComplete: () => void
 };
 
 
-const AdventureScreen: React.FC<AdventureScreenProps> = ({ onBackToMap }) => {
-    const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
+const AdventureScreen: React.FC<AdventureScreenProps> = ({ onBackToMap, initialLevel, onSaveProgress }) => {
+    const [currentLevelIndex, setCurrentLevelIndex] = useState(Math.max(0, initialLevel - 1));
 
     const handleNextLevel = () => {
-        if (currentLevelIndex < ADVENTURE_LEVELS.length - 1) {
-            setCurrentLevelIndex(prev => prev + 1);
-        } else {
-            // Last level completed, just show the final message
+        const currentLevel = ADVENTURE_LEVELS[currentLevelIndex];
+        if (!currentLevel) return;
+
+        const nextLevelNumber = currentLevel.id + 1;
+        onSaveProgress(nextLevelNumber);
+
+        if (currentLevelIndex < ADVENTURE_LEVELS.length) {
             setCurrentLevelIndex(prev => prev + 1);
         }
     };

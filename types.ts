@@ -82,6 +82,7 @@ export interface ResultState {
 export interface UserProfile {
     email: string;
     preferredLanguage: Language;
+    adventureLevel: number;
 }
 
 

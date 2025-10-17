@@ -11,7 +11,7 @@ import ProfileScreen from './components/ProfileScreen';
 import LoginScreen from './components/LoginScreen';
 import AdventureScreen from './components/AdventureScreen';
 import { auth } from './services/firebase';
-import { getUserProgress, saveUserProgress, getUserProfile, createUserProfile } from './services/firestoreService';
+import { getUserProgress, saveUserProgress, getUserProfile, createUserProfile, updateUserProfile } from './services/firestoreService';
 
 const App: React.FC = () => {
     const [screen, setScreen] = useState<'map' | 'editor' | 'code-quiz' | 'adventure'>('map');
@@ -108,6 +108,17 @@ const App: React.FC = () => {
             setProgress(newProgress);
         }
     };
+
+    const handleAdventureProgress = async (nextLevelNumber: number) => {
+        if (!user || !userProfile) return;
+    
+        // Only update if the user is advancing
+        if (nextLevelNumber <= userProfile.adventureLevel) return;
+    
+        const updatedProfile = { ...userProfile, adventureLevel: nextLevelNumber };
+        setUserProfile(updatedProfile); // Update local state for immediate UI feedback
+        await updateUserProfile(user.uid, { adventureLevel: nextLevelNumber }); // Persist to Firestore
+    };
     
     const handleSignOut = async () => {
         await signOut(auth);
@@ -181,8 +192,12 @@ const App: React.FC = () => {
                     onQuizComplete={handleLevelComplete}
                 />
             )}
-            {screen === 'adventure' && (
-                <AdventureScreen onBackToMap={handleBackToMap} />
+            {screen === 'adventure' && userProfile && (
+                <AdventureScreen 
+                    onBackToMap={handleBackToMap}
+                    initialLevel={userProfile.adventureLevel}
+                    onSaveProgress={handleAdventureProgress}
+                />
             )}
             {result && (
                 <ResultScreen 

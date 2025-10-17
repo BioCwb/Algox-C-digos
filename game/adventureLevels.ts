@@ -11,23 +11,30 @@ export const ADVENTURE_LEVELS: AdventureLevel[] = [
   {
     id: 1,
     name: "Olá, Coelhinho!",
-    description: "Sua primeira missão: Diga 'olá' para a cenoura! Use Adiante() para alcançá-la.",
+    description: "Sua primeira missão: Diga 'olá' para a cenoura! Use a API do player para alcançá-la.",
     grid: [
       ['S', 'P', 'P', 'C'],
     ],
-    solutionCode: `Adiante()\nAdiante()\nAdiante()`,
+    solutionCode: `// Use um loop para se mover várias vezes
+for (let i = 0; i < 3; i++) {
+  await player.moveForward();
+}`,
   },
-  // Level 2: Inspired by simple sequences like Ex 2
+  // Level 2: Inspired by "Qual é o seu nome?"
   {
     id: 2,
-    name: "Primeiros Passos",
-    description: "Às vezes, o caminho não é uma linha reta. Use Girar() para mudar de direção.",
+    name: "Prazer em Conhecer!",
+    description: "O coelho quer se apresentar ao 'João da Silva'! Guie-o até a cenoura para que ele possa dizer 'Olá!'.",
     grid: [
       ['S', 'P', 'P'],
       ['X', 'X', 'P'],
       ['X', 'X', 'C'],
     ],
-    solutionCode: `Adiante()\nAdiante()\nGirar()\nAdiante()\nAdiante()`,
+    solutionCode: `await player.moveForward();
+await player.moveForward();
+await player.turnRight();
+await player.moveForward();
+await player.moveForward();`,
   },
   // Level 3: Inspired by Ex 6 (Predecessor/Successor)
   {
@@ -37,7 +44,11 @@ export const ADVENTURE_LEVELS: AdventureLevel[] = [
     grid: [
       ['C', 'P', 'S'],
     ],
-    solutionCode: `// O coelho começa virado para a direita.\n// É preciso virar 180 graus para ir para a esquerda.\nGirar()\nGirar()\nAdiante()\nAdiante()`,
+    solutionCode: `// O coelho precisa virar 180 graus.
+await player.turnRight();
+await player.turnRight();
+await player.moveForward();
+await player.moveForward();`,
   },
   // Level 4: Inspired by Ex 10 (Painting a wall)
   {
@@ -49,7 +60,14 @@ export const ADVENTURE_LEVELS: AdventureLevel[] = [
       ['P', 'X', 'X', 'P'],
       ['C', 'P', 'P', 'C'],
     ],
-    solutionCode: `// Percorrer a borda externa no sentido horário\nAdiante()\nAdiante()\nAdiante()\n\nGirar()\nAdiante()\nAdiante()\n\nGirar()\nAdiante()\nAdiante()\nAdiante()\n\nGirar()\nAdiante()\nAdiante()`,
+    solutionCode: `// Percorra a borda externa no sentido horário
+for (let i = 0; i < 3; i++) { await player.moveForward(); }
+await player.turnRight();
+for (let i = 0; i < 2; i++) { await player.moveForward(); }
+await player.turnRight();
+for (let i = 0; i < 3; i++) { await player.moveForward(); }
+await player.turnRight();
+for (let i = 0; i < 2; i++) { await player.moveForward(); }`,
   },
   // Level 5: Inspired by Ex 14 (Car rental)
   {
@@ -61,6 +79,16 @@ export const ADVENTURE_LEVELS: AdventureLevel[] = [
         ['P', 'P', 'X', 'P'],
         ['P', 'P', 'P', 'P'],
       ],
-    solutionCode: `// Desça, atravesse e suba.\nGirar()\nAdiante()\nAdiante()\n\nGirar()\nGirar()\nGirar()\n\nAdiante()\nAdiante()\nAdiante()\n\nGirar()\nAdiante()\nAdiante()`,
+    solutionCode: `// Desça, atravesse e suba.
+await player.turnRight();
+await player.moveForward();
+await player.moveForward();
+await player.turnLeft();
+await player.moveForward();
+await player.moveForward();
+await player.moveForward();
+await player.turnLeft();
+await player.moveForward();
+await player.moveForward();`,
   },
 ];
