@@ -177,11 +177,11 @@ export const LEVELS: Level[] = [
     ],
     initialPlayerState: { x: 0, y: 0, dir: 'right', hasItem: false },
     availableBlocks: ['forward', 'left', 'right', 'pickup'],
-    solutionLength: 8,
+    solutionLength: 11,
     codeExamples: {
-        javascript: `player.moveForward();\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward();\nplayer.pickupItem();\nplayer.turnLeft();\nplayer.turnLeft();\nplayer.moveForward();`,
-        python: `player.move_forward()\nplayer.move_forward()\nplayer.turn_right()\nplayer.move_forward()\nplayer.pickup_item()\nplayer.turn_left()\nplayer.turn_left()\nplayer.move_forward()`,
-        cpp: `player.moveForward();\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward();\nplayer.pickupItem();\nplayer.turnLeft();\nplayer.turnLeft();\nplayer.moveForward();`,
+        javascript: `player.moveForward();\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward();\nplayer.pickupItem();\nplayer.turnLeft();\nplayer.turnLeft();\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward();\nplayer.moveForward();`,
+        python: `player.move_forward()\nplayer.move_forward()\nplayer.turn_right()\nplayer.move_forward()\nplayer.pickup_item()\nplayer.turn_left()\nplayer.turn_left()\nplayer.move_forward()\nplayer.turn_right()\nplayer.move_forward()\nplayer.move_forward()`,
+        cpp: `player.moveForward();\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward();\nplayer.pickupItem();\nplayer.turnLeft();\nplayer.turnLeft();\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward();\nplayer.moveForward();`,
     }
   },
   {
@@ -207,22 +207,22 @@ export const LEVELS: Level[] = [
   {
     id: 12,
     name: "Vai e Volta",
-    description: "Um passo pra frente, um passo para o lado.",
+    description: "Às vezes, é preciso dar uma volta para chegar ao seu destino.",
     levelType: 'blocks',
     grid: [
-        [{ type: 'start' }, { type: 'wall' }],
-        [{ type: 'path' }, { type: 'wall' }],
-        [{ type: 'path' }, { type: 'path' }],
-        [{ type: 'wall' }, { type: 'path' }],
-        [{ type: 'goal' }, { type: 'wall' }],
+        [{ type: 'start' }, { type: 'path' }],
+        [{ type: 'wall' },  { type: 'path' }],
+        [{ type: 'goal' },  { type: 'path' }],
+        [{ type: 'wall' },  { type: 'wall' }],
+        [{ type: 'wall' },  { type: 'wall' }],
     ],
-    initialPlayerState: { x: 0, y: 0, dir: 'down', hasItem: false },
+    initialPlayerState: { x: 0, y: 0, dir: 'right', hasItem: false },
     availableBlocks: ['forward', 'left', 'right'],
-    solutionLength: 7,
+    solutionLength: 6,
     codeExamples: {
-        javascript: `player.moveForward();\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward();\nplayer.turnLeft();\nplayer.moveForward();\nplayer.moveForward();`,
-        python: `player.move_forward()\nplayer.move_forward()\nplayer.turn_right()\nplayer.move_forward()\nplayer.turn_left()\nplayer.move_forward()\nplayer.move_forward()`,
-        cpp: `player.moveForward();\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward();\nplayer.turnLeft();\nplayer.moveForward();\nplayer.moveForward();`,
+        javascript: `player.moveForward();\nplayer.turnRight();\nplayer.moveForward();\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward();`,
+        python: `player.move_forward()\nplayer.turn_right()\nplayer.move_forward()\nplayer.move_forward()\nplayer.turn_right()\nplayer.move_forward()`,
+        cpp: `player.moveForward();\nplayer.turnRight();\nplayer.moveForward();\nplayer.moveForward();\nplayer.turnRight();\nplayer.moveForward();`,
     }
   },
   {
